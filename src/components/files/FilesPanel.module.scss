@@ -1,0 +1,137 @@
+@use "../../styles/variables" as v;
+@use "../../styles/mixins" as m;
+
+.dropzone {
+  @include m.flex-center;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 1.5rem 1rem;
+  border: 2px dashed v.$neutral-200;
+  border-radius: v.$radius-lg;
+  color: v.$neutral-500;
+  font-size: 0.8125rem;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: v.$brand-400;
+    color: v.$brand-600;
+  }
+}
+
+.dropzoneActive {
+  border-color: v.$brand-600;
+  background: v.$brand-50;
+  color: v.$brand-600;
+}
+
+.uploadingHint {
+  font-weight: 600;
+  color: v.$brand-600;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.formWrapper {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-lg;
+  background: v.$neutral-50;
+}
+
+// The inline edit form is one grid item among the file cards — span the full row width instead of
+// being squeezed into a single card-sized column, since title+description need real room to edit.
+.formWrapperSpan {
+  grid-column: 1 / -1;
+}
+
+// Capped at 4 columns on wide screens per explicit request ("4 per row on max"), stepping down on
+// narrower viewports rather than an auto-fill/minmax layout that could exceed 4.
+.fileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.875rem;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (min-width: 64rem) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.fileCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-lg;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: v.$brand-300;
+    box-shadow: v.$shadow-sm;
+  }
+}
+
+.filePreview {
+  @include m.flex-center;
+  height: 6rem;
+  background: v.$neutral-50;
+  border-bottom: 1px solid v.$neutral-100;
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fileIcon {
+  color: v.$neutral-400;
+}
+
+.fileCardBody {
+  padding: 0.5rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.fileTitle {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: v.$neutral-900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: v.$brand-600;
+    text-decoration: underline;
+  }
+}
+
+.fileMeta {
+  font-size: 0.625rem;
+  color: v.$neutral-400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileCardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.125rem;
+  padding: 0.25rem 0.375rem 0.5rem;
+}

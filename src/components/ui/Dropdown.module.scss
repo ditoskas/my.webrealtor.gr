@@ -1,0 +1,59 @@
+@use "../../styles/variables" as v;
+
+.dropdown {
+  position: relative;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  min-width: 12rem;
+  background: #fff;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-lg;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  z-index: 40;
+}
+
+.menuRight {
+  right: 0;
+}
+
+.menuLeft {
+  left: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid v.$neutral-100;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: v.$neutral-600;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: v.$neutral-50;
+  }
+}
+
+.itemActive {
+  color: v.$brand-700;
+  background-color: v.$brand-50;
+}

@@ -1,0 +1,24 @@
+@use "../variables" as v;
+@use "../mixins" as m;
+
+// Shared status-pill classes for components/ui/Badge.tsx.
+
+.badge {
+  @include m.badge-base;
+}
+
+.badgeActive {
+  @include m.status-variant(v.$success-bg, v.$success-fg);
+}
+
+.badgePending {
+  @include m.status-variant(v.$warning-bg, v.$warning-fg);
+}
+
+.badgeInactive {
+  @include m.status-variant(v.$neutral-100, v.$neutral-600);
+}
+
+.badgeDanger {
+  @include m.status-variant(v.$danger-bg, v.$danger-fg);
+}

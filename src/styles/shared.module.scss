@@ -1,0 +1,10 @@
+// Single entry point for every cross-feature, reused-more-than-once style class.
+// components/ui/* import this module rather than repeating Tailwind utility strings inline.
+// Feature-specific styling that isn't shared belongs in that feature's own <Component>.module.scss.
+
+@forward "components/button";
+@forward "components/badge";
+@forward "components/card";
+@forward "components/modal";
+@forward "components/form";
+@forward "components/page";

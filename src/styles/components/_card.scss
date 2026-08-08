@@ -1,0 +1,25 @@
+@use "../variables" as v;
+@use "../mixins" as m;
+
+// Shared surface classes for components/ui/Card.tsx and table shells.
+
+.card {
+  @include m.card;
+}
+
+.cardHeader {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid v.$neutral-100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tableHeaderCell {
+  padding: 0.875rem 1.5rem;
+  font-size: 10px;
+  font-weight: 800;
+  color: v.$neutral-400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

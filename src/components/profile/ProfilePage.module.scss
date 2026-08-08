@@ -1,0 +1,23 @@
+@use "../../styles/variables" as v;
+@use "../../styles/mixins" as m;
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  max-width: 40rem;
+}
+
+.card {
+  @include m.card;
+  padding: 1.5rem;
+}
+
+.cardTitle {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: v.$neutral-900;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid v.$neutral-100;
+}

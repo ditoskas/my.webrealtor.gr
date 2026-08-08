@@ -1,0 +1,33 @@
+@use "../../styles/variables" as v;
+@use "../../styles/mixins" as m;
+
+.wrapper {
+  @include m.flex-center;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: v.$neutral-50;
+  padding: 1rem;
+}
+
+.panel {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.logo {
+  height: 2.25rem;
+  width: auto;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 0.875rem;
+  color: v.$neutral-500;
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+}

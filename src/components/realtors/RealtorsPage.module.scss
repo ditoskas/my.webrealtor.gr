@@ -1,0 +1,14 @@
+@use "../../styles/variables" as v;
+
+.table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.emptyRow {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: v.$neutral-400;
+  font-size: 0.75rem;
+}

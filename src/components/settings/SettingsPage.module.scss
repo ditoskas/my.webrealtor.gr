@@ -1,0 +1,57 @@
+@use "../../styles/variables" as v;
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: flex-start;
+
+  @media (min-width: 48rem) {
+    flex-direction: row;
+  }
+}
+
+.sidebar {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0.5rem;
+
+  @media (min-width: 48rem) {
+    width: 14rem;
+  }
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: v.$radius-md;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: v.$neutral-600;
+  text-align: left;
+  transition: color 0.15s, background-color 0.15s;
+
+  &:hover {
+    background-color: v.$neutral-50;
+    color: v.$neutral-900;
+  }
+}
+
+.sidebarLinkActive {
+  background-color: v.$brand-50;
+  color: v.$brand-700;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}

@@ -1,0 +1,36 @@
+@use "../variables" as v;
+
+// Shared page-header layout, reused by every feature page (Realtors, Clients, Properties, Users, ...).
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 40rem) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.pageHeaderSimple {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: v.$neutral-900;
+}
+
+.pageSubtitle {
+  font-size: 0.875rem;
+  color: v.$neutral-500;
+  margin-top: 0.25rem;
+}

@@ -1,0 +1,49 @@
+@use "variables" as v;
+
+// Shared card container — used by any component that needs the white/bordered/shadow
+// surface, without repeating the same three declarations everywhere.
+@mixin card {
+  background: #fff;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-xl;
+  box-shadow: v.$shadow-sm;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Status/badge color variant (active/pending/inactive, success/warning/danger, ...).
+@mixin status-variant($bg, $fg) {
+  background-color: $bg;
+  color: $fg;
+}
+
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: v.$radius-md;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+@mixin badge-base {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

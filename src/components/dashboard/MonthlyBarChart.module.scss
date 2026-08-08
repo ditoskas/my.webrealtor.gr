@@ -1,0 +1,96 @@
+@use "../../styles/variables" as v;
+
+.card {
+  padding: 1.25rem 1.5rem;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: v.$neutral-900;
+  margin-bottom: 1.25rem;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  height: 12rem;
+  border-bottom: 1px solid v.$neutral-200;
+}
+
+.column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.barWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1.5rem;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: v.$radius-md;
+
+  &:focus-visible {
+    outline: 2px solid v.$brand-300;
+    outline-offset: 2px;
+  }
+}
+
+.bar {
+  width: 100%;
+  max-width: 1.5rem;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  transition: opacity 0.15s;
+}
+
+.barWrapper:hover .bar,
+.barWrapper:focus-visible .bar {
+  opacity: 0.8;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -4px);
+  background: v.$neutral-900;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  border-radius: v.$radius-md;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 1;
+}
+
+.barWrapper:hover .tooltip,
+.barWrapper:focus-visible .tooltip {
+  opacity: 1;
+}
+
+.columnLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: v.$neutral-500;
+}
+
+.emptyState {
+  padding: 2.5rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: v.$neutral-400;
+}

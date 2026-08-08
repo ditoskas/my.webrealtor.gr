@@ -1,0 +1,84 @@
+@use "../../styles/variables" as v;
+
+.footer {
+  height: 2.5rem;
+  padding-inline: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fff;
+  border-top: 1px solid v.$neutral-100;
+  flex-shrink: 0;
+}
+
+.messageArea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.messageIcon {
+  color: v.$neutral-400;
+  flex-shrink: 0;
+}
+
+.messageText {
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messageEmpty {
+  color: v.$neutral-400;
+  font-style: italic;
+}
+
+.messageNormal {
+  color: v.$neutral-500;
+}
+
+.messageSuccess {
+  color: v.$success-fg;
+}
+
+.messageError {
+  color: v.$danger-fg;
+}
+
+.messageWarning {
+  color: v.$warning-fg;
+}
+
+.messageInfo {
+  color: v.$info-fg;
+}
+
+.separator {
+  width: 1px;
+  height: 1.25rem;
+  background: v.$neutral-200;
+  flex-shrink: 0;
+}
+
+.clockArea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.clockIcon {
+  color: v.$neutral-400;
+}
+
+.clockText {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: v.$neutral-600;
+  font-variant-numeric: tabular-nums;
+}

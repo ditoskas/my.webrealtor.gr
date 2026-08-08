@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 requires `@import "tailwindcss"` + `@theme` to live in a plain .css file
+ * (see CLAUDE.md → Styling). Everything else in this project is .scss; this file only
+ * ever holds the Tailwind bootstrap and design tokens — no component styling here.
+ * Values below must stay in sync with src/styles/_variables.scss.
+ */
+@theme {
+  --color-brand-50: #f1f6fa;
+  --color-brand-100: #dae7f1;
+  --color-brand-200: #b9d2e4;
+  --color-brand-300: #88b3d0;
+  --color-brand-400: #4f8db3;
+  --color-brand-500: #206c96;
+  --color-brand-600: #004261;
+  --color-brand-700: #00354e;
+  --color-brand-800: #00283a;
+  --color-brand-900: #001d2b;
+  --color-brand-950: #00111a;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

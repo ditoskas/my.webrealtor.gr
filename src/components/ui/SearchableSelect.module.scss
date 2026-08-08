@@ -1,0 +1,79 @@
+@use "../../styles/variables" as v;
+
+.wrapper {
+  position: relative;
+}
+
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-lg;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s;
+  cursor: pointer;
+
+  &:focus {
+    border-color: v.$brand-400;
+    box-shadow: 0 0 0 3px rgba(79, 141, 179, 0.15);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    background-color: v.$neutral-50;
+    color: v.$neutral-400;
+  }
+}
+
+.chevron {
+  position: absolute;
+  right: 0.75rem;
+  color: v.$neutral-400;
+  pointer-events: none;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-lg;
+  box-shadow: v.$shadow-lg;
+  z-index: 40;
+}
+
+.option {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  color: v.$neutral-600;
+  cursor: pointer;
+
+  &:hover {
+    background-color: v.$neutral-50;
+  }
+}
+
+.optionActive {
+  color: v.$brand-700;
+  background-color: v.$brand-50;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  color: v.$neutral-400;
+  text-align: center;
+}

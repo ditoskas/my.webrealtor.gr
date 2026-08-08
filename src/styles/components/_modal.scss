@@ -1,0 +1,36 @@
+@use "../variables" as v;
+
+// Shared modal shell for components/ui/Modal.tsx.
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.4);
+  padding: 1rem;
+}
+
+.panel {
+  background: #fff;
+  border-radius: v.$radius-xl;
+  box-shadow: v.$shadow-lg;
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: v.$neutral-900;
+}

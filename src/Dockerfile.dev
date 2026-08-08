@@ -1,0 +1,12 @@
+# Development image: source is bind-mounted over /app by docker-compose, so this
+# only needs to provide the runtime and node_modules — no build step required.
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev:docker"]

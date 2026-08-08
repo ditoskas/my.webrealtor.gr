@@ -1,0 +1,75 @@
+networks:
+  webrealtor-network:
+    driver: bridge
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: webrealtor-mongodb
+    restart: unless-stopped
+    command: mongod --setParameter authenticationMechanisms=SCRAM-SHA-1,SCRAM-SHA-256
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: webrealtor
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - webrealtor-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service (Next.js)
+  backend:
+    build:
+      context: ./src
+      dockerfile: Dockerfile.dev
+    container_name: webrealtor-backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/webrealtor?authSource=admin
+      JWT_SECRET: dev-secret-change-me
+      PORT: 3000
+      UPLOADS_DIR: /uploads
+      UPLOADS_PUBLIC_URL: http://localhost:3000/uploads # Changed port to 3000
+      # Bind mounts on Windows/Mac don't reliably propagate native file-change events into
+      # the container, so `next dev` (Turbopack) never notices edits. WATCHPACK_POLLING
+      # makes webpack (see dev:docker script) poll the filesystem for changes instead.
+      WATCHPACK_POLLING: "true"
+      # Outbound email (see lib/mail.ts). Left unset in dev — sendMail() logs a warning and
+      # skips sending rather than throwing, so signup still works locally without real SMTP.
+      SMTP_HOST:
+      SMTP_PORT: 587
+      SMTP_SECURE: "false"
+      SMTP_USER:
+      SMTP_PASSWORD:
+      SMTP_FROM_NAME: WebRealtor
+      SMTP_FROM_EMAIL:
+      APP_BASE_URL: http://localhost:3000
+    ports:
+      - "3000:3000" # Changed port mapping to 3000:3000
+    networks:
+      - webrealtor-network
+    volumes:
+      - ./src:/app
+      - backend_node_modules:/app/node_modules # Named volume for node_modules
+      - backend_logs:/app/logs
+      - C:/Shared/webrealtor:/uploads
+    command: sh -c "npm install && npm run dev:docker" # Run npm install first, then run the dev server (webpack + polling)
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  backend_logs:
+  backend_node_modules:
