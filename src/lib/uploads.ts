@@ -1,5 +1,5 @@
 import path from "path";
-import type { AttachableEntityType } from "./types";
+import type { AttachableEntityType, TransactionFileKind } from "./types";
 
 // Server-only — deliberately not NEXT_PUBLIC_ (see .env.example), since only API route handlers
 // (POST /api/uploads, GET /uploads/[...path]) ever need these. Falls back to a local ./uploads
@@ -72,6 +72,33 @@ export function listingUploadDir(realtorId: string, listingId: string): string {
 
 export function listingUploadUrlPrefix(realtorId: string, listingId: string): string {
   return `${UPLOADS_PUBLIC_URL}/realtors/${realtorId}/${listingId}`;
+}
+
+/**
+ * `<UPLOADS_DIR>/realtors/<realtorId>/profile/` — a Realtor's single profile photo (see
+ * models/Realtor.ts's `imageUrl`, POST/DELETE /api/realtors/[id]/image). Deliberately its own
+ * `profile` subfolder, not dropped directly under `realtors/<realtorId>/`, so it never mixes with
+ * that same realtor's Attachments (attachmentUploadDir below writes straight into that folder).
+ */
+export function realtorImageUploadDir(realtorId: string): string {
+  return path.join(UPLOADS_DIR, "realtors", realtorId, "profile");
+}
+
+export function realtorImageUploadUrlPrefix(realtorId: string): string {
+  return `${UPLOADS_PUBLIC_URL}/realtors/${realtorId}/profile`;
+}
+
+/**
+ * `<UPLOADS_DIR>/transactions/<transactionId>/<receipt|contract>/` — a Transaction's two file
+ * slots (see models/Transaction.ts, POST/DELETE /api/transactions/[id]/files/[kind]). Split by
+ * kind so replacing one never touches the other.
+ */
+export function transactionFileUploadDir(transactionId: string, kind: TransactionFileKind): string {
+  return path.join(UPLOADS_DIR, "transactions", transactionId, kind);
+}
+
+export function transactionFileUploadUrlPrefix(transactionId: string, kind: TransactionFileKind): string {
+  return `${UPLOADS_PUBLIC_URL}/transactions/${transactionId}/${kind}`;
 }
 
 // Files (Attachments) storage layout — deliberately separate from listingUploadDir above: this one

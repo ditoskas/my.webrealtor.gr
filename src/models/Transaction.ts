@@ -18,6 +18,11 @@ export interface ITransaction extends Document {
   commission: number;
   tax: number;
   comment: string;
+  // Uploaded via POST /api/transactions/[id]/files/[kind] (kind: "receipt" | "contract"), never
+  // through this model's own generic PUT — same "dedicated endpoint owns this field" discipline as
+  // Realtor.imageUrl. See CLAUDE.md → "Transactions".
+  receiptUrl?: string | null;
+  contractUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +43,8 @@ const transactionSchema = new Schema<ITransaction, ITransactionModel>(
     commission: { type: Number, required: true },
     tax: { type: Number, default: 0 },
     comment: { type: String, default: "" },
+    receiptUrl: { type: String, default: null },
+    contractUrl: { type: String, default: null },
   },
   baseSchemaOptions
 );

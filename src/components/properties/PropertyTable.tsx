@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Images, Pencil, Phone, Trash2 } from "lucide-react";
+import { Eye, Images, Pencil, Phone, Receipt, Trash2 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Card, Button } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
@@ -22,6 +22,7 @@ interface PropertyTableProps {
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
   onMedia: (property: Property) => void;
+  onReceipt: (property: Property) => void;
 }
 
 export default function PropertyTable({
@@ -35,6 +36,7 @@ export default function PropertyTable({
   onEdit,
   onDelete,
   onMedia,
+  onReceipt,
 }: PropertyTableProps) {
   const t = useTranslation();
   // Actions column is always present now — the View action is visible to every role, unlike
@@ -72,8 +74,10 @@ export default function PropertyTable({
                   key={property.id}
                   className={
                     property.status === "inactive"
-                      ? "bg-neutral-100 hover:bg-neutral-200/60"
-                      : "hover:bg-neutral-50/60"
+                      ? sharedStyles.rowInactive
+                      : property.status === "pending"
+                        ? sharedStyles.rowPending
+                        : "hover:bg-neutral-50/60"
                   }
                 >
                   <td className="px-6 py-4 text-sm font-semibold text-neutral-900">
@@ -138,6 +142,17 @@ export default function PropertyTable({
                         >
                           <Images size={14} />
                         </Button>
+                        {property.status === "active" && (
+                          <Button
+                            variant="ghost"
+                            className={sharedStyles.buttonIcon}
+                            title={t("properties.table.receiptTitle")}
+                            aria-label={t("properties.table.receiptTitle")}
+                            onClick={() => onReceipt(property)}
+                          >
+                            <Receipt size={14} />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           className={sharedStyles.buttonIcon}

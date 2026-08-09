@@ -1,6 +1,7 @@
 import {
   Contact,
   ScrollText,
+  UserRound,
   Flame,
   Zap,
   SlidersHorizontal,
@@ -25,6 +26,7 @@ import styles from "./SettingsPage.module.scss";
 export type SettingsSection =
   | "realtors"
   | "logs"
+  | "users"
   | "heating"
   | "energyClass"
   | "propertyOptions"
@@ -46,6 +48,7 @@ const SECTIONS: { id: SettingsSection; labelKey: string; icon: typeof Flame }[] 
   // Moved here from the Topbar's main nav — see CLAUDE.md → "Settings-embedded Realtors and Logs".
   { id: "realtors", labelKey: "nav.realtors", icon: Contact },
   { id: "logs", labelKey: "nav.logs", icon: ScrollText },
+  { id: "users", labelKey: "nav.users", icon: UserRound },
   { id: "heating", labelKey: "settings.heatingTabLabel", icon: Flame },
   { id: "energyClass", labelKey: "settingsEntities.energyClass", icon: Zap },
   { id: "propertyOptions", labelKey: "settings.propertyOptionsLabel", icon: SlidersHorizontal },

@@ -172,6 +172,7 @@ export default function PropertiesPage() {
             onEdit={(property) => router.push(`/properties/${property.id}`)}
             onDelete={setPropertyToDelete}
             onMedia={(property) => router.push(`/properties/${property.id}/media`)}
+            onReceipt={(property) => router.push(`/tools/receipt?propertyId=${property.id}`)}
           />
         </>
       )}

@@ -15,7 +15,11 @@
 }
 
 .title {
-  text-align: center;
+  // flex-center, not text-align: center — Tailwind's preflight reset sets img to display: block,
+  // which text-align can no longer center (it only affects inline content); flexbox centers the
+  // logo regardless of the image's display mode.
+  display: flex;
+  justify-content: center;
   margin-bottom: 0.5rem;
 }
 

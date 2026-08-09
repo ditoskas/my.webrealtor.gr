@@ -1,0 +1,20 @@
+@use "../variables" as v;
+
+// Row-level status tinting shared by PropertyTable/LandTable — a listing's `status` (see
+// PropertyStatus in lib/types.ts) drives a background tint on its whole row, not just a
+// per-cell Badge, so an inactive/pending row stands out while scanning the table.
+.rowInactive {
+  background-color: v.$danger-soft-bg;
+
+  &:hover {
+    background-color: v.$danger-bg;
+  }
+}
+
+.rowPending {
+  background-color: v.$neutral-100;
+
+  &:hover {
+    background-color: v.$neutral-200;
+  }
+}

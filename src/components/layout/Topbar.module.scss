@@ -69,6 +69,20 @@
   color: v.$brand-700;
 }
 
+// Reset browser button defaults for the Tools dropdown trigger (which renders as a <button>)
+// while keeping the .navLink visual appearance.
+.navDropdown {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.navDropdownChevron {
+  color: v.$neutral-400;
+  flex-shrink: 0;
+  margin-left: 0.125rem;
+}
+
 .actions {
   display: flex;
   align-items: center;

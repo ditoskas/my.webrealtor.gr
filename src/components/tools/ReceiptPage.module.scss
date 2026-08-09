@@ -1,0 +1,118 @@
+@use "../../styles/variables" as v;
+
+// The shared form-card / print-preview shell (.page, .formSection, .formCard, .rowThree/.rowFour's
+// container structure, .printSection, etc.) now lives in styles/components/_docTool.scss as
+// sharedStyles.docTool* — see CLAUDE.md → styling convention. Only Receipt-specific styling stays
+// here: the row layouts below and the printed receipt's own look.
+
+// Row with 3 columns: Date / Amount / Amount-in-words
+.rowThree {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 2fr 1.5fr 4fr;
+  }
+}
+
+// Row with 4 columns: Pronoun / Name / Pronoun / Name
+.rowFour {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 0.75fr 3fr 0.75fr 3fr;
+  }
+}
+
+// ─── Both copies on one A4 page ────────────────────────────────────────────
+// Matches the A4 portrait ratio so the two copies spread across the *whole* page instead of
+// bunching at the top with blank space below — handleSavePdf's html2canvas capture measures this
+// box's actual rendered pixels, and since its ratio already matches A4, jsPDF's width-scaled
+// placement lands as a full page automatically. `justify-content: space-between` is what pushes
+// the second copy down to the bottom instead of sitting right under the first.
+.receiptPage {
+  position: relative;
+  aspect-ratio: 210 / 297;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+// ─── One receipt copy ──────────────────────────────────────────────────────
+.receiptCopy {
+  break-inside: avoid;
+}
+
+.receiptHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid v.$neutral-200;
+}
+
+// Also doubles as the transaction's realtor's own photo slot when they have one uploaded (see
+// RealtorImageUpload / Realtor.imageUrl) — object-fit keeps a non-logo-shaped photo looking right
+// at this fixed height.
+.receiptLogo {
+  height: 2.25rem;
+  width: auto;
+  max-width: 6rem;
+  object-fit: contain;
+}
+
+.receiptHeading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: v.$brand-600;
+}
+
+.receiptMeta {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid v.$neutral-200;
+  font-size: 0.875rem;
+  color: v.$neutral-600;
+}
+
+.receiptBody {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: v.$neutral-900;
+
+  p {
+    margin: 0;
+  }
+}
+
+.receiptSignature {
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.875rem;
+  margin-top: 2.5rem;
+  padding-right: 4rem;
+  color: v.$neutral-900;
+}
+
+// Cut-line — sits at the vertical midpoint of .receiptPage's empty middle space regardless of how
+// tall either copy renders. Taken out of flex flow (absolute) so it doesn't eat into the
+// space-between distribution above; positioned relative to .receiptPage instead.
+.receiptDivider {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border: none;
+  border-top: 2px dashed v.$neutral-200;
+  margin: 0;
+
+  @media print {
+    border-top: 1px dashed #aaa;
+  }
+}

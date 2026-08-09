@@ -61,7 +61,16 @@ export default function LandTable({
               </tr>
             ) : (
               lands.map((land) => (
-                <tr key={land.id} className="hover:bg-neutral-50/60">
+                <tr
+                  key={land.id}
+                  className={
+                    land.status === "inactive"
+                      ? sharedStyles.rowInactive
+                      : land.status === "pending"
+                        ? sharedStyles.rowPending
+                        : "hover:bg-neutral-50/60"
+                  }
+                >
                   <td className="px-6 py-4 text-sm font-semibold text-neutral-900">
                     {land.transactionType === "rent" ? t("land.table.forRent") : t("land.table.forSale")}
                   </td>

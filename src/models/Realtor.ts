@@ -19,6 +19,10 @@ export interface IRealtor extends Document {
   // an unset rate simply skips auto-fill, commission stays manually entered.
   saleCommission?: number | null;
   rentCommission?: number | null;
+  // Profile photo — uploaded/replaced via POST /api/realtors/[id]/image (not this model's own
+  // generic PUT, so a PUT that omits this field never clears it, same as userId). Used on the
+  // Receipt tool when the selected transaction's realtor has one — see components/tools/ReceiptPage.
+  imageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +44,7 @@ const realtorSchema = new Schema<IRealtor, IRealtorModel>(
     website: { type: String, default: "" },
     saleCommission: { type: Number, default: null, min: 0 },
     rentCommission: { type: Number, default: null, min: 0 },
+    imageUrl: { type: String, default: null },
   },
   baseSchemaOptions
 );

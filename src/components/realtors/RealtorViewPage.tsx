@@ -8,6 +8,7 @@ import apiClient from "@/lib/apiClient";
 import { useTranslation } from "@/store/hooks";
 import type { ApiResponse, Realtor, User } from "@/lib/types";
 import EntityDetailTabs from "@/components/entityDetails/EntityDetailTabs";
+import RealtorImageUpload from "./RealtorImageUpload";
 import sharedStyles from "@/styles/shared.module.scss";
 import styles from "./RealtorViewPage.module.scss";
 
@@ -72,6 +73,12 @@ export default function RealtorViewPage({ realtorId }: RealtorViewPageProps) {
           <p className={sharedStyles.pageSubtitle}>{realtor.email}</p>
         </div>
       </div>
+
+      <RealtorImageUpload
+        realtorId={realtor.id}
+        imageUrl={realtor.imageUrl}
+        onUpdated={(imageUrl) => setRealtor((prev) => (prev ? { ...prev, imageUrl } : prev))}
+      />
 
       <div className={styles.statsBar}>
         <span className={styles.statPill}>

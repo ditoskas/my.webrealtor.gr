@@ -8,6 +8,7 @@ import styles from "./SettingsPage.module.scss";
 import SettingsSidebar, { type SettingsSection } from "./SettingsSidebar";
 import RealtorsPage from "@/components/realtors/RealtorsPage";
 import LogsPage from "@/components/logs/LogsPage";
+import UsersPage from "@/components/users/UsersPage";
 import EnergyClassSection from "./energyClass/EnergyClassSection";
 import HeatingSystemSection from "./heatingSystem/HeatingSystemSection";
 import PropertyCategorySection from "./propertyCategory/PropertyCategorySection";
@@ -27,6 +28,7 @@ import SlopeSection from "./slope/SlopeSection";
 const SECTION_COMPONENTS: Partial<Record<SettingsSection, () => ReactElement>> = {
   realtors: RealtorsPage,
   logs: LogsPage,
+  users: UsersPage,
   energyClass: EnergyClassSection,
   heating: HeatingSystemSection,
   propertyCategory: PropertyCategorySection,

@@ -18,3 +18,9 @@
     padding: 2rem;
   }
 }
+
+// Opted out of the 80rem cap above — see DashboardShell.tsx's FULL_WIDTH_PREFIXES. Transactions
+// needed this once its table grew two extra file columns (Receipt/Contract) beyond Edit/Delete.
+.mainFullWidth {
+  max-width: none;
+}

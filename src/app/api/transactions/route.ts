@@ -78,6 +78,18 @@ export async function POST(request: Request) {
       comment: typeof body.comment === "string" ? body.comment.trim() : "",
     });
 
+    // Mark the listing inactive — the deal is done, so the listing is no longer available.
+    // Best-effort: a status-update failure must never prevent the transaction from being recorded.
+    try {
+      if (listingType === "Property") {
+        await PropertyService.update(listingId, { status: "inactive" });
+      } else {
+        await LandService.update(listingId, { status: "inactive" });
+      }
+    } catch (err) {
+      console.error("POST /api/transactions: failed to set listing inactive", err);
+    }
+
     await LogEntryService.info({
       category: "Transactions",
       message: `Transaction (${action}) recorded for client ${client.firstName} ${client.lastName}`,

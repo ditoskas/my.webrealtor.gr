@@ -1,0 +1,144 @@
+@use "../variables" as v;
+
+// Shared shell for the "fill a form, preview a printable document, save as PDF" tool pages under
+// /tools (ReceiptPage, ContractPage) — extracted once ContractPage needed the exact same form
+// card / print preview structure Receipt already had, per CLAUDE.md's "reuse over copy-paste".
+// Document-specific styling (the actual printed content) stays in each page's own
+// <Component>.module.scss.
+
+.docToolPage {
+  padding: 1.5rem;
+}
+
+// ─── Form section (hidden when printing) ──────────────────────────────────
+.docToolFormSection {
+  max-width: 48rem;
+  margin: 0 auto 2rem;
+
+  @media print {
+    display: none;
+  }
+}
+
+.docToolFormCard {
+  background: #fff;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-xl;
+  box-shadow: v.$shadow-sm;
+  overflow: hidden;
+}
+
+.docToolFormHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid v.$neutral-100;
+}
+
+.docToolFormTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: v.$neutral-900;
+  letter-spacing: -0.025em;
+}
+
+.docToolFormSubtitle {
+  font-size: 0.875rem;
+  color: v.$neutral-500;
+  margin-top: 0.25rem;
+}
+
+.docToolFormBody {
+  padding: 1.25rem 1.5rem 0.25rem;
+}
+
+.docToolSelectorSection {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid v.$neutral-100;
+  background: v.$neutral-50;
+}
+
+.docToolFormFooter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid v.$neutral-100;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.docToolPrintBtn,
+.docToolSavePdfBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: v.$radius-md;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: v.$shadow-sm;
+  transition: background-color 0.15s;
+  border: none;
+  cursor: pointer;
+}
+
+.docToolPrintBtn {
+  background-color: v.$neutral-100;
+  color: v.$neutral-600;
+
+  &:hover {
+    background-color: v.$neutral-200;
+  }
+}
+
+.docToolSavePdfBtn {
+  background-color: v.$brand-600;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: v.$brand-700;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Print preview (shown on screen too as a live preview) ─────────────────
+.docToolPrintSection {
+  max-width: 48rem;
+  margin: 0 auto;
+
+  @media print {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.docToolPreviewLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: v.$neutral-400;
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+
+  @media print {
+    display: none;
+  }
+}
+
+.docToolPrintWrapper {
+  background: #fff;
+  border: 1px solid v.$neutral-200;
+  border-radius: v.$radius-xl;
+  box-shadow: v.$shadow-sm;
+  padding: 2rem 2.5rem;
+
+  @media print {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 1rem 1.5rem;
+  }
+}

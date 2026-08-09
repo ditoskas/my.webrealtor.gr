@@ -11,6 +11,7 @@ import { setLocale } from "@/store/localeSlice";
 import type { Locale } from "@/lib/i18n/locales";
 import type { ApiResponse, Realtor, RealtorInput, User } from "@/lib/types";
 import RealtorForm from "@/components/realtors/RealtorForm";
+import RealtorImageUpload from "@/components/realtors/RealtorImageUpload";
 import ChangePasswordForm, { type ChangePasswordValues } from "./ChangePasswordForm";
 import LanguageForm from "./LanguageForm";
 import DisplayNameForm from "./DisplayNameForm";
@@ -156,15 +157,22 @@ export default function ProfilePage() {
             {loadingRealtor ? (
               <p className="text-sm text-neutral-400">{t("profile.realtorLoading")}</p>
             ) : realtor ? (
-              <RealtorForm
-                key={`${realtor.id}-${realtorFormKey}`}
-                initialValues={realtor}
-                submitLabel={t("common.save")}
-                loading={realtorSaving}
-                error={realtorError}
-                onSubmit={handleRealtorSubmit}
-                onCancel={() => setRealtorFormKey((key) => key + 1)}
-              />
+              <>
+                <RealtorImageUpload
+                  realtorId={realtor.id}
+                  imageUrl={realtor.imageUrl}
+                  onUpdated={(imageUrl) => setRealtor((prev) => (prev ? { ...prev, imageUrl } : prev))}
+                />
+                <RealtorForm
+                  key={`${realtor.id}-${realtorFormKey}`}
+                  initialValues={realtor}
+                  submitLabel={t("common.save")}
+                  loading={realtorSaving}
+                  error={realtorError}
+                  onSubmit={handleRealtorSubmit}
+                  onCancel={() => setRealtorFormKey((key) => key + 1)}
+                />
+              </>
             ) : (
               <p className={sharedStyles.errorText}>{realtorError ?? t("profile.realtorLoadError")}</p>
             )}

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)https://www.realestate-toskas.gr/receipt.html -->
+<html lang="el"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Required meta tags -->
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="./reciept_files/bootstrap.min.css">
+    <link rel="stylesheet" href="./reciept_files/tempusdominus-bootstrap-4.min.css">
+    <link rel="stylesheet" href="./reciept_files/all.min.css">
+    <link rel="stylesheet" href="./reciept_files/app.css">
+    <title>Απόδειξη Είσπραξης</title>
+</head>
+<body cz-shortcut-listen="true">
+<div class="container mt-4 no-print">
+    <form>
+        <div class="card" style="overflow: visible;">
+            <div class="card-header">
+                <h2 class="mb-0">
+                    Πληροφορίες
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label for="txtDate">Ημερομήνια</label>
+                        <div class="input-group date date-component" id="txtDate" data-target-input="nearest">
+                            <input type="text" class="form-control control-content" data-control-id=".sDate" data-target="#txtDate">
+                            <div class="input-group-append" data-target="#txtDate" data-toggle="datetimepicker">
+                                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="txtAmount">Ποσό</label>
+                        <input type="text" id="txtAmount" class="control-content form-control" value="" data-control-id=".sAmount">
+                    </div>
+                    <div class="form-group col-md-7">
+                        <label for="txtAmountText">Ποσό σε κείμενο</label>
+                        <input type="text" id="txtAmountText" class="control-content form-control" value="" data-control-id=".sAmountText">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-1">
+                        <label for="cmbGender">Προσ.</label>
+                        <select id="cmbGender" class="control-content form-control" data-control-id=".sGender">
+                            <option value="τον" selected="">Τον</option>
+                            <option value="την">Την</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-5">
+                        <label for="txtFullname">Ονοματεπώνυμο</label>
+                        <input type="text" id="txtFullname" class="control-content form-control" value="" data-control-id=".sFullName">
+                    </div>
+                    <div class="form-group col-md-1">
+                        <label for="cmbGenderLavon">Προσ.</label>
+                        <select id="cmbGenderLavon" class="control-content form-control" data-control-id=".sGenderLavon">
+                            <option value="τον" selected="">Τον</option>
+                            <option value="την">Την</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-5">
+                        <label for="txtFullnameLavon">Ονοματεπώνυμο Λαβών</label>
+                        <input type="text" id="txtFullnameLavon" class="control-content form-control" value="" data-control-id=".sFullNameLavon">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="txtReason">Αιτιολογία</label>
+                        <textarea id="txtReason" rows="5" class="control-content form-control" data-control-id=".sReason"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="jumbotron py-2 px-1 text-center">
+        <button class="btn btn-primary" id="btnPrint">Εκτύπωση</button>
+    </div>
+</div>
+
+<page size="A4">
+    <br>
+    <table class="table table-borderless w-100">
+        <tbody><tr style="border-bottom: 1px solid #d2d2d2;">
+            <td>
+                <img width="150" src="./reciept_files/toskas_only_h300px.png">
+            </td>
+            <td style="font-size: 26px; text-align: right; color: #004261;">Απόδειξη Είσπραξης</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #d2d2d2;">
+            <td>
+                <span>Ημερομήνια: </span>
+                <span class="sDate font-weight-bold"></span>
+            </td>
+            <td style="text-align: right;">
+                <span>Ποσό: </span>
+                <span class="sAmount font-weight-bold"></span><span class="font-weight-bold">€</span>
+            </td>
+        </tr>
+    </tbody></table>
+    <p>
+        Έλαβα <span class="sGenderLavon">ο υπογεγραμμένος</span> <span class="sFullNameLavon font-weight-bold"></span>.<br>
+        Απο <span class="sGender">τον</span> <span class="font-weight-bold sFullName"></span>.<br>
+        Το ποσό των <span class="sAmountText font-weight-bold"></span> <span class="font-weight-bold">ευρώ</span>.<br>
+         Με αιτιολογία <span class="sReason font-weight-bold"></span>.
+    </p>
+    <br>
+    <div class="w-100 text-right font-weight-bold">
+        Ο ΛΑΒΩΝ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+    <br><br><br>
+    <br><br><br>
+    <table class="table table-borderless w-100">
+        <tbody><tr style="border-bottom: 1px solid #d2d2d2;">
+            <td>
+                <img width="150" src="./reciept_files/toskas_only_h300px.png">
+            </td>
+            <td style="font-size: 26px; text-align: right; color: #004261;">Απόδειξη Είσπραξης</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #d2d2d2;">
+            <td>
+                <span>Ημερομήνια: </span>
+                <span class="sDate font-weight-bold"></span>
+            </td>
+            <td style="text-align: right;">
+                <span>Ποσό: </span>
+                <span class="sAmount font-weight-bold"></span><span class="font-weight-bold">€</span>
+            </td>
+        </tr>
+    </tbody></table>
+    <p>
+        Έλαβα <span class="sGenderLavon">ο υπογεγραμμένος</span> <span class="sFullNameLavon font-weight-bold"></span>.<br>
+        Απο <span class="sGender">τον</span> <span class="font-weight-bold sFullName"></span>.<br>
+        Το ποσό των <span class="sAmountText font-weight-bold"></span> <span class="font-weight-bold">ευρώ</span>.<br>
+        Με αιτιολογία <span class="sReason font-weight-bold"></span>.
+    </p>
+    <br>
+    <div class="w-100 text-right font-weight-bold">
+        Ο ΛΑΒΩΝ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+</page>
+<script src="./reciept_files/jquery-3.4.1.slim.min.js.download"></script>
+<script src="./reciept_files/bootstrap.bundle.min.js.download"></script>
+<script src="./reciept_files/moment-with-locales.min.js.download"></script>
+<script src="./reciept_files/tempusdominus-bootstrap-4.min.js.download"></script>
+<script src="./reciept_files/receipt.js.download"></script>
+
+</body></html>

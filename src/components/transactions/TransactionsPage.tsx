@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui";
+import { useRouter } from "next/navigation";
+import { Button, ConfirmModal } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/errors";
 import { MessageHandler } from "@/helpers/messageHandler";
 import { useAppDispatch, useCanEdit, useCurrentUser, useTranslation } from "@/store/hooks";
 import type {
@@ -15,6 +17,7 @@ import type {
   PropertyCategory,
   Realtor,
   Transaction,
+  TransactionFileKind,
 } from "@/lib/types";
 import sharedStyles from "@/styles/shared.module.scss";
 import TransactionTable from "./TransactionTable";
@@ -24,6 +27,7 @@ import DeleteTransactionModal from "./DeleteTransactionModal";
 
 export default function TransactionsPage() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const t = useTranslation();
   const user = useCurrentUser();
   const canEdit = useCanEdit();
@@ -43,6 +47,12 @@ export default function TransactionsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+
+  // Removing either file slot — one shared confirm dialog for both kinds (see CLAUDE.md's
+  // ConfirmModal precedent for Notes/Files), same "small sub-resource delete" shape.
+  const [removeFileTarget, setRemoveFileTarget] = useState<{ transaction: Transaction; kind: TransactionFileKind } | null>(null);
+  const [removeFileLoading, setRemoveFileLoading] = useState(false);
+  const [removeFileError, setRemoveFileError] = useState<string | null>(null);
 
   // Category/Floor pool entities — used only to build a richer listing label (Category · Floor ·
   // Address), same lookups ViewingPanel/TransactionForm already fetch independently.
@@ -106,6 +116,26 @@ export default function TransactionsPage() {
 
   const reloadSilently = useCallback(() => loadData({ silent: true }), [loadData]);
 
+  const handleRemoveFileConfirm = async () => {
+    if (!removeFileTarget) return;
+    const { transaction, kind } = removeFileTarget;
+    setRemoveFileLoading(true);
+    setRemoveFileError(null);
+    try {
+      await apiClient.delete(`/api/transactions/${transaction.id}/files/${kind}`);
+      MessageHandler.success(
+        dispatch,
+        t(kind === "receipt" ? "transactions.files.receiptRemoved" : "transactions.files.contractRemoved")
+      );
+      setRemoveFileTarget(null);
+      reloadSilently();
+    } catch (err) {
+      setRemoveFileError(getErrorMessage(err, t("transactions.files.removeError")));
+    } finally {
+      setRemoveFileLoading(false);
+    }
+  };
+
   const realtorNames = useMemo(
     () =>
       realtors.reduce<Record<string, string>>((map, realtor) => {
@@ -143,6 +173,9 @@ export default function TransactionsPage() {
           canEdit={canEdit}
           onEdit={setTransactionToEdit}
           onDelete={setTransactionToDelete}
+          onGenerateReceipt={(transaction) => router.push(`/tools/receipt?transactionId=${transaction.id}`)}
+          onGenerateContract={(transaction) => router.push(`/tools/contract?transactionId=${transaction.id}`)}
+          onRemoveFile={(transaction, kind) => setRemoveFileTarget({ transaction, kind })}
         />
       )}
 
@@ -158,6 +191,19 @@ export default function TransactionsPage() {
         transaction={transactionToDelete}
         onClose={() => setTransactionToDelete(null)}
         onDeleted={reloadSilently}
+      />
+      <ConfirmModal
+        isOpen={!!removeFileTarget}
+        title={
+          removeFileTarget?.kind === "receipt"
+            ? t("transactions.files.removeReceiptTitle")
+            : t("transactions.files.removeContractTitle")
+        }
+        message={t("transactions.files.removeConfirmMessage")}
+        loading={removeFileLoading}
+        error={removeFileError}
+        onConfirm={handleRemoveFileConfirm}
+        onCancel={() => setRemoveFileTarget(null)}
       />
     </div>
   );

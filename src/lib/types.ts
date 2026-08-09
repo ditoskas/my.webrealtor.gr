@@ -69,6 +69,9 @@ export interface Realtor {
   // TransactionForm's price/commission auto-fill (see CLAUDE.md → "Realtor commission rates").
   saleCommission: number | null;
   rentCommission: number | null;
+  // Profile photo — see models/Realtor.ts. Set via POST /api/realtors/[id]/image, never via the
+  // generic PUT. Used by the Receipt tool when the transaction's realtor has one.
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   // Computed by RealtorService.list(), not stored on the document — present on list responses,
@@ -629,11 +632,23 @@ export interface Transaction {
   commission: number;
   tax: number;
   comment: string;
+  // See models/Transaction.ts — set only via POST/DELETE /api/transactions/[id]/files/[kind].
+  receiptUrl?: string | null;
+  contractUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export type TransactionInput = Omit<Transaction, "id" | "createdAt" | "updatedAt">;
+export type TransactionInput = Omit<
+  Transaction,
+  "id" | "createdAt" | "updatedAt" | "receiptUrl" | "contractUrl"
+>;
+
+// The two file slots a Transaction can carry — see POST/DELETE /api/transactions/[id]/files/[kind]
+// and CLAUDE.md → "Transactions". "receipt" has a generator (the Receipt tool, see
+// components/tools/ReceiptPage); "contract" is upload-only, there's no equivalent generator.
+export type TransactionFileKind = "receipt" | "contract";
+export const TRANSACTION_FILE_KINDS: TransactionFileKind[] = ["receipt", "contract"];
 
 // Notes — polymorphic, attachable to a Realtor, Client, Property, or Land. One shared collection
 // discriminated by entityType, same "generic audit-style collection" shape as LogEntry/PriceHistory.
