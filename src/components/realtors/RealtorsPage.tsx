@@ -78,6 +78,7 @@ export default function RealtorsPage() {
           onView={(realtor) => router.push(`/realtors/${realtor.id}/view`)}
           onEdit={setRealtorToEdit}
           onDelete={setRealtorToDelete}
+          onMessages={(realtor) => router.push(`/realtors/${realtor.id}/messages`)}
         />
       )}
 

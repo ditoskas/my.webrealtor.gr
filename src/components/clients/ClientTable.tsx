@@ -1,4 +1,4 @@
-import { Mail, Phone, Smartphone, MapPin, Eye, Pencil, Trash2 } from "lucide-react";
+import { Mail, Phone, Smartphone, MapPin, Eye, Pencil, Trash2, ClipboardList } from "lucide-react";
 import type { Client } from "@/lib/types";
 import { Card, Button } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
@@ -12,6 +12,7 @@ interface ClientTableProps {
   onView: (client: Client) => void;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
+  onOrder: (client: Client) => void;
 }
 
 export default function ClientTable({
@@ -22,6 +23,7 @@ export default function ClientTable({
   onView,
   onEdit,
   onDelete,
+  onOrder,
 }: ClientTableProps) {
   const t = useTranslation();
   // Actions column is always present — the View action is visible to every role, unlike
@@ -117,6 +119,15 @@ export default function ClientTable({
                     </Button>
                     {canEdit && (
                       <>
+                        <Button
+                          variant="ghost"
+                          className={sharedStyles.buttonIcon}
+                          title={t("clients.table.orderTitle")}
+                          aria-label={t("clients.table.orderTitle")}
+                          onClick={() => onOrder(client)}
+                        >
+                          <ClipboardList size={14} />
+                        </Button>
                         <Button
                           variant="ghost"
                           className={sharedStyles.buttonIcon}

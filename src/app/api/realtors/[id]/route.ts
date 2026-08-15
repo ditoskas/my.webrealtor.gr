@@ -49,6 +49,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       postcode: body.postcode?.trim() ?? "",
       googleMapsUrl: body.googleMapsUrl?.trim() ?? "",
       website: body.website?.trim() ?? "",
+      realtorNumber: body.realtorNumber?.trim() ?? "",
       saleCommission: typeof body.saleCommission === "number" ? body.saleCommission : null,
       rentCommission: typeof body.rentCommission === "number" ? body.rentCommission : null,
     });

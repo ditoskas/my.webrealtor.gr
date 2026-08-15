@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Home, LandPlot, UserRound, Settings, Handshake, LogOut, ChevronDown, Languages, Check, UserCircle, Wrench, Receipt, List, FileSignature,
+  LayoutDashboard, Users, Home, LandPlot, UserRound, Settings, Handshake, LogOut, ChevronDown, Languages, Check, UserCircle, Wrench, Receipt, List, FileSignature, ClipboardList, MessagesSquare,
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { Dropdown } from "@/components/ui";
@@ -29,7 +29,10 @@ const NAV_LINKS_BEFORE_LISTING = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { href: "/clients", labelKey: "nav.clients", icon: Users },
 ];
-const NAV_LINKS_BEFORE_TOOLS = [{ href: "/transactions", labelKey: "nav.transactions", icon: Handshake }];
+const NAV_LINKS_BEFORE_TOOLS = [
+  { href: "/transactions", labelKey: "nav.transactions", icon: Handshake },
+  { href: "/messages", labelKey: "nav.messages", icon: MessagesSquare },
+];
 const NAV_LINKS_AFTER_TOOLS = [{ href: "/settings", labelKey: "nav.settings", icon: Settings }];
 
 // Properties and Land are grouped under the "Listing" dropdown rather than their own top-level
@@ -39,11 +42,20 @@ const LISTING_LINKS = [
   { href: "/lands", labelKey: "nav.land", icon: LandPlot },
 ];
 
-// Root reaches every section; Administrator/Operator are restricted to these five — mirrors
-// proxy.ts's ROOT_ONLY_PREFIXES (kept in sync by hand, see CLAUDE.md → Auth). Transactions is
-// deliberately accessible here, same level as Clients/Properties/Land — see CLAUDE.md →
-// "Transactions".
-const NON_ROOT_ALLOWED_HREFS = new Set(["/dashboard", "/clients", "/properties", "/lands", "/transactions", "/tools"]);
+// Root reaches every section; Administrator/Operator are restricted to these — mirrors
+// proxy.ts's ROOT_ONLY_PREFIXES (kept in sync by hand, see CLAUDE.md → Auth). Transactions and
+// Messages are deliberately accessible here, same level as Clients/Properties/Land — see
+// CLAUDE.md → "Transactions"/"Messages" (Messages is realtor-scoped like the rest; the
+// Message Forms *config* stays Root-only, reached instead via a row action on /realtors).
+const NON_ROOT_ALLOWED_HREFS = new Set([
+  "/dashboard",
+  "/clients",
+  "/properties",
+  "/lands",
+  "/transactions",
+  "/messages",
+  "/tools",
+]);
 
 function isVisible(role: UserRole | undefined, href: string): boolean {
   if (!role) return false;
@@ -175,6 +187,18 @@ export default function Topbar() {
                     >
                       <FileSignature size={14} />
                       <span>{t("contract.menuLabel")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={dropdownStyles.item}
+                      onClick={() => {
+                        close();
+                        router.push("/tools/order");
+                      }}
+                    >
+                      <ClipboardList size={14} />
+                      <span>{t("order.menuLabel")}</span>
                     </button>
                   </>
                 )}

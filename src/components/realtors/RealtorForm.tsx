@@ -18,6 +18,7 @@ const EMPTY_VALUES: RealtorInput = {
   postcode: "",
   googleMapsUrl: "",
   website: "",
+  realtorNumber: "",
   saleCommission: null,
   rentCommission: null,
 };
@@ -156,6 +157,18 @@ export default function RealtorForm({
             placeholder="https://maps.app.goo.gl/..."
             value={values.googleMapsUrl}
             onChange={setField("googleMapsUrl")}
+          />
+        </div>
+        <div className={sharedStyles.field}>
+          <label className={sharedStyles.label} htmlFor="realtorNumber">
+            {t("realtors.form.realtorNumber")}
+          </label>
+          <input
+            id="realtorNumber"
+            className={sharedStyles.input}
+            placeholder={t("realtors.form.realtorNumberPlaceholder")}
+            value={values.realtorNumber}
+            onChange={setField("realtorNumber")}
           />
         </div>
         <div className={sharedStyles.field}>

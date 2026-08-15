@@ -13,6 +13,9 @@ export interface IRealtor extends Document {
   postcode: string;
   googleMapsUrl: string;
   website: string;
+  // Business registration number (e.g. Greek ΓΕΜΗ), printed on the Order (Εντολή) tool's "Αριθμός"
+  // line — see CLAUDE.md → "Order tool" and components/tools/OrderPage.tsx.
+  realtorNumber: string;
   // Commission rates as a fraction of price (e.g. 0.1 = 10%), applied to Transaction.price when
   // auto-filling TransactionForm's commission field — saleCommission for a "buy" action,
   // rentCommission for a "rent" action (see CLAUDE.md → "Realtor commission rates"). Nullable:
@@ -42,6 +45,7 @@ const realtorSchema = new Schema<IRealtor, IRealtorModel>(
     postcode: { type: String, default: "" },
     googleMapsUrl: { type: String, default: "" },
     website: { type: String, default: "" },
+    realtorNumber: { type: String, default: "" },
     saleCommission: { type: Number, default: null, min: 0 },
     rentCommission: { type: Number, default: null, min: 0 },
     imageUrl: { type: String, default: null },

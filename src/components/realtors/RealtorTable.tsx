@@ -1,4 +1,4 @@
-import { Mail, Phone, Smartphone, MapPin, Home, Users, LandPlot, Eye, Pencil, Trash2 } from "lucide-react";
+import { Mail, Phone, Smartphone, MapPin, Home, Users, LandPlot, Eye, Pencil, Trash2, MessagesSquare } from "lucide-react";
 import type { Realtor } from "@/lib/types";
 import { Card, Button } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
@@ -10,9 +10,10 @@ interface RealtorTableProps {
   onView: (realtor: Realtor) => void;
   onEdit: (realtor: Realtor) => void;
   onDelete: (realtor: Realtor) => void;
+  onMessages: (realtor: Realtor) => void;
 }
 
-export default function RealtorTable({ realtors, onView, onEdit, onDelete }: RealtorTableProps) {
+export default function RealtorTable({ realtors, onView, onEdit, onDelete, onMessages }: RealtorTableProps) {
   const t = useTranslation();
 
   return (
@@ -132,6 +133,15 @@ export default function RealtorTable({ realtors, onView, onEdit, onDelete }: Rea
                         onClick={() => onView(realtor)}
                       >
                         <Eye size={14} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={sharedStyles.buttonIcon}
+                        title={t("realtors.table.messagesTitle")}
+                        aria-label={t("realtors.table.messagesTitle")}
+                        onClick={() => onMessages(realtor)}
+                      >
+                        <MessagesSquare size={14} />
                       </Button>
                       <Button
                         variant="ghost"

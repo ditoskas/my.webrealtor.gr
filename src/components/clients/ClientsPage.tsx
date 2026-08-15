@@ -95,6 +95,7 @@ export default function ClientsPage() {
           onView={(client) => router.push(`/clients/${client.id}/view`)}
           onEdit={setClientToEdit}
           onDelete={setClientToDelete}
+          onOrder={(client) => router.push(`/tools/order?clientId=${client.id}`)}
         />
       )}
 

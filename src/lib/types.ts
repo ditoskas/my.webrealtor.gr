@@ -65,6 +65,9 @@ export interface Realtor {
   postcode: string;
   googleMapsUrl: string;
   website: string;
+  // Business registration number (e.g. Greek "ΓΕΜΗ 51795619000") — see models/Realtor.ts. Printed
+  // on the Order (Εντολή) tool, see components/tools/OrderPage.tsx.
+  realtorNumber: string;
   // Commission rates as a fraction of price (e.g. 0.1 = 10%) — see models/Realtor.ts. Drive
   // TransactionForm's price/commission auto-fill (see CLAUDE.md → "Realtor commission rates").
   saleCommission: number | null;
@@ -691,6 +694,39 @@ export interface Attachment {
 }
 
 export type AttachmentInput = Pick<Attachment, "title" | "description">;
+
+// Message Forms — per-realtor config for an embeddable public form (e.g. a website contact
+// form), managed only by Root as an action on the Realtors section (see CLAUDE.md → "Messages").
+// `guid` is always server-generated (see models/MessageForm.ts) and is the lookup key an external
+// site posts to POST /api/public/message — see PUBLIC_API.md.
+export interface MessageForm {
+  id: string;
+  realtorId: string;
+  guid: string;
+  slug: string;
+  subject: string;
+  recipient: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MessageFormInput = Omit<MessageForm, "id" | "guid" | "createdAt" | "updatedAt">;
+
+// Messages — one row per submission received via POST /api/public/message, surfaced on its own
+// top-level page (every role, realtor-scoped like Clients/Properties — see CLAUDE.md → "Data
+// scoping by realtor"). slug/subject/recipient are a snapshot of the MessageForm at receipt time.
+export interface Message {
+  id: string;
+  realtorId: string;
+  messageFormId: string;
+  slug: string;
+  subject: string;
+  recipient: string;
+  body: Record<string, unknown>;
+  emailSent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // Footer notifications
 
