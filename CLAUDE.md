@@ -195,8 +195,15 @@ when asked.
   and is the lookup key an external site (e.g. the realtor's own website contact form) posts to
   the new **public, unauthenticated, CORS-enabled** `POST /api/public/message` — see
   `PUBLIC_API.md` for the full third-party-facing contract, and its own top intro for why that
-  file exists separately from this one. A successful post stores a `Message` row (denormalizing
-  slug/subject/recipient from the form *at receipt time*, so later config edits never rewrite
+  file exists separately from this one. **Every `/api/public/**` route, present and future, must
+  return `PublicApiResponse` (`lib/publicApiResponse.ts`) — a `success`/`payload`/`message`
+  envelope, built via `PublicApiResponse.success(payload?, message?)` /
+  `PublicApiResponse.error(message)` then `.toResponse(status, headers)`, never a hand-rolled
+  `NextResponse.json()` body — so third-party callers get one stable shape across every public
+  endpoint.** This is deliberately distinct from `ApiResponse<T>` (`lib/types.ts`,
+  `data`/`message`/`success`), which internal `/api/**` routes use instead. A successful post
+  stores a `Message` row (denormalizing slug/subject/recipient from the form *at receipt time*,
+  so later config edits never rewrite
   already-received history) and best-effort emails the recipient a `key: value` rendering of the
   submitted JSON (`MessageService.receive`, `lib/mail.ts`'s `sendMail` — same best-effort
   discipline as every other email in this app). Received messages surface on their own top-level

@@ -1,0 +1,13 @@
+@use "../../styles/variables" as v;
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.pageInfo {
+  font-size: 0.75rem;
+  color: v.$neutral-500;
+}
