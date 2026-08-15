@@ -76,7 +76,15 @@ export default function Topbar() {
       await apiClient.post("/api/auth/logout");
     } finally {
       dispatch(clearUser());
-      router.push("/login");
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+      // Hard navigation, not router.push — a client-side transition keeps the Redux store and
+      // Next's client router cache alive across the login screen, so whatever the next person
+      // logs in as can end up rendering a screen that still has the previous user's data baked
+      // into it. A full reload guarantees nothing survives the session boundary.
+      window.location.href = "/login";
     }
   };
 

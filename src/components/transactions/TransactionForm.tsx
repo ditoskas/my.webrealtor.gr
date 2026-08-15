@@ -27,7 +27,8 @@ interface TransactionFormValues {
   listingId: string;
   action: TransactionInput["action"];
   price: number;
-  commission: number;
+  buyerCommission: number;
+  sellerCommission: number;
   tax: number;
   comment: string;
 }
@@ -38,7 +39,9 @@ function todayIsoDate(): string {
 
 // realtor.saleCommission drives a "buy" action, realtor.rentCommission drives "rent" — see
 // CLAUDE.md → "Realtor commission rates". Returns null (leave commission untouched) when the
-// realtor has no rate set for that action.
+// realtor has no rate set for that action. Only auto-fills buyerCommission (the rate configured
+// on the realtor) — sellerCommission is always manual, since not every deal collects from both
+// sides and there's no second rate to derive it from.
 function computeCommission(price: number, action: TransactionInput["action"], realtor: Realtor | null): number | null {
   if (!realtor) return null;
   const rate = action === "rent" ? realtor.rentCommission : realtor.saleCommission;
@@ -76,7 +79,8 @@ export default function TransactionForm({
     listingId: "",
     action: "buy",
     price: 0,
-    commission: 0,
+    buyerCommission: 0,
+    sellerCommission: 0,
     tax: 0,
     comment: "",
     ...initialValues,
@@ -168,7 +172,7 @@ export default function TransactionForm({
       isFirstRealtorRender.current = false;
       return;
     }
-    setValues((prev) => ({ ...prev, clientId: "", listingId: "", price: 0, commission: 0 }));
+    setValues((prev) => ({ ...prev, clientId: "", listingId: "", price: 0, buyerCommission: 0, sellerCommission: 0 }));
   }, [values.realtorId]);
 
   // One merged Property+Land list — the separate "Type" picker was removed (see CLAUDE.md →
@@ -210,14 +214,14 @@ export default function TransactionForm({
     setValues((prev) => {
       if (!listing) return { ...prev, listingId };
       const action: TransactionFormValues["action"] = listing.transactionType === "rent" ? "rent" : "buy";
-      const commission = computeCommission(listing.price, action, selectedRealtor);
+      const buyerCommission = computeCommission(listing.price, action, selectedRealtor);
       return {
         ...prev,
         listingId,
         listingType,
         action,
         price: listing.price,
-        commission: commission ?? prev.commission,
+        buyerCommission: buyerCommission ?? prev.buyerCommission,
         clientId: listing.clientId ?? "",
       };
     });
@@ -249,7 +253,8 @@ export default function TransactionForm({
       listingId: values.listingId,
       action: values.action,
       price: values.price,
-      commission: values.commission,
+      buyerCommission: values.buyerCommission,
+      sellerCommission: values.sellerCommission,
       tax: values.tax,
       comment: values.comment,
     });
@@ -336,18 +341,32 @@ export default function TransactionForm({
         </div>
 
         <div className={sharedStyles.field}>
-          <label className={sharedStyles.label} htmlFor="tx-commission">
-            {t("transactions.form.commission")}
+          <label className={sharedStyles.label} htmlFor="tx-buyerCommission">
+            {t("transactions.form.buyerCommission")}
           </label>
           <input
-            id="tx-commission"
+            id="tx-buyerCommission"
             type="number"
             min="0"
             step="0.01"
-            required
             className={sharedStyles.input}
-            value={values.commission}
-            onChange={(event) => setValues((prev) => ({ ...prev, commission: Number(event.target.value) }))}
+            value={values.buyerCommission}
+            onChange={(event) => setValues((prev) => ({ ...prev, buyerCommission: Number(event.target.value) }))}
+          />
+        </div>
+
+        <div className={sharedStyles.field}>
+          <label className={sharedStyles.label} htmlFor="tx-sellerCommission">
+            {t("transactions.form.sellerCommission")}
+          </label>
+          <input
+            id="tx-sellerCommission"
+            type="number"
+            min="0"
+            step="0.01"
+            className={sharedStyles.input}
+            value={values.sellerCommission}
+            onChange={(event) => setValues((prev) => ({ ...prev, sellerCommission: Number(event.target.value) }))}
           />
         </div>
 

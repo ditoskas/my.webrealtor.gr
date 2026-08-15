@@ -42,7 +42,7 @@ export default function TransactionTable({
   onRemoveFile,
 }: TransactionTableProps) {
   const t = useTranslation();
-  const columnCount = 9 + (showRealtorColumn ? 1 : 0);
+  const columnCount = 10 + (showRealtorColumn ? 1 : 0);
 
   const clientName = (transaction: Transaction) => {
     const client = clients.find((c) => c.id === transaction.clientId);
@@ -70,7 +70,8 @@ export default function TransactionTable({
               <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerListing")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerAction")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerPrice")}</th>
-              <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerCommission")}</th>
+              <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerBuyerCommission")}</th>
+              <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerSellerCommission")}</th>
               {showRealtorColumn && <th className={sharedStyles.tableHeaderCell}>{t("transactions.table.headerRealtor")}</th>}
               <th className={`${sharedStyles.tableHeaderCell} text-right`}>{t("transactions.table.headerActions")}</th>
             </tr>
@@ -100,7 +101,8 @@ export default function TransactionTable({
                     </Badge>
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-neutral-900">{transaction.price.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-neutral-600">{transaction.commission.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-600">{transaction.buyerCommission.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-600">{transaction.sellerCommission.toLocaleString()}</td>
                   {showRealtorColumn && (
                     <td className="px-6 py-4 text-sm text-neutral-600">
                       {realtorNames[transaction.realtorId] ?? "—"}

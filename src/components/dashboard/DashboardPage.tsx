@@ -87,7 +87,7 @@ export default function DashboardPage() {
       const bucket = bucketsByKey.get(`${transactionDate.getFullYear()}-${transactionDate.getMonth()}`);
       if (!bucket) continue;
       bucket.transactionCount += 1;
-      bucket.revenue += transaction.commission;
+      bucket.revenue += transaction.buyerCommission + transaction.sellerCommission;
     }
 
     return buckets;

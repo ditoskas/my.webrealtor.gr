@@ -71,7 +71,9 @@ function buildValuesFromTransaction(
 
   return {
     date: dateStr,
-    amount: tx.commission.toFixed(2),
+    // Total collected across both sides of the deal — see CLAUDE.md → "Transactions". Still a
+    // plain editable text field below, so a receipt for just one side is a manual edit away.
+    amount: (tx.buyerCommission + tx.sellerCommission).toFixed(2),
     amountText: "",
     genderLavon: "τον",
     fullNameLavon: realtorName,

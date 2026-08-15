@@ -42,7 +42,12 @@ export async function POST(request: Request) {
     const listingId = body.listingId;
     const action = TRANSACTION_ACTIONS.includes(body.action) ? body.action : null;
     const price = body.price !== undefined && body.price !== "" ? Number(body.price) : NaN;
-    const commission = body.commission !== undefined && body.commission !== "" ? Number(body.commission) : NaN;
+    const buyerCommissionRaw =
+      body.buyerCommission !== undefined && body.buyerCommission !== "" ? Number(body.buyerCommission) : 0;
+    const sellerCommissionRaw =
+      body.sellerCommission !== undefined && body.sellerCommission !== "" ? Number(body.sellerCommission) : 0;
+    const buyerCommission = Number.isNaN(buyerCommissionRaw) ? 0 : buyerCommissionRaw;
+    const sellerCommission = Number.isNaN(sellerCommissionRaw) ? 0 : sellerCommissionRaw;
     const tax = body.tax !== undefined && body.tax !== "" ? Number(body.tax) : 0;
 
     if (!realtorId) return NextResponse.json({ message: "realtorId is required" }, { status: 400 });
@@ -54,7 +59,6 @@ export async function POST(request: Request) {
     if (!listingId) return NextResponse.json({ message: "Property or Land is required" }, { status: 400 });
     if (!action) return NextResponse.json({ message: "Action is required" }, { status: 400 });
     if (Number.isNaN(price)) return NextResponse.json({ message: "Price is required" }, { status: 400 });
-    if (Number.isNaN(commission)) return NextResponse.json({ message: "Commission is required" }, { status: 400 });
 
     const realtor = await RealtorService.get(realtorId);
     if (!realtor) return NextResponse.json({ message: "Realtor not found" }, { status: 400 });
@@ -73,7 +77,8 @@ export async function POST(request: Request) {
       listingId: new mongoose.Types.ObjectId(listingId),
       action,
       price,
-      commission,
+      buyerCommission,
+      sellerCommission,
       tax: Number.isNaN(tax) ? 0 : tax,
       comment: typeof body.comment === "string" ? body.comment.trim() : "",
     });

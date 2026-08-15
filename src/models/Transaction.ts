@@ -15,7 +15,11 @@ export interface ITransaction extends Document {
   listingId: mongoose.Types.ObjectId;
   action: TransactionAction;
   price: number;
-  commission: number;
+  // The realtor collects commission from both sides of a deal — buyerCommission from the
+  // buyer/tenant, sellerCommission from the seller/landlord. Independent, both default 0 (not
+  // every deal collects from both sides), see CLAUDE.md → "Transactions".
+  buyerCommission: number;
+  sellerCommission: number;
   tax: number;
   comment: string;
   // Uploaded via POST /api/transactions/[id]/files/[kind] (kind: "receipt" | "contract"), never
@@ -40,7 +44,8 @@ const transactionSchema = new Schema<ITransaction, ITransactionModel>(
     listingId: { type: Schema.Types.ObjectId, required: true },
     action: { type: String, enum: TRANSACTION_ACTIONS, required: true },
     price: { type: Number, required: true },
-    commission: { type: Number, required: true },
+    buyerCommission: { type: Number, default: 0 },
+    sellerCommission: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },
     comment: { type: String, default: "" },
     receiptUrl: { type: String, default: null },

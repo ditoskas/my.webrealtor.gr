@@ -632,7 +632,10 @@ export interface Transaction {
   listingId: string;
   action: TransactionAction;
   price: number;
-  commission: number;
+  // The realtor collects commission from both sides of a deal — buyerCommission from the
+  // buyer/tenant, sellerCommission from the seller/landlord. See models/Transaction.ts.
+  buyerCommission: number;
+  sellerCommission: number;
   tax: number;
   comment: string;
   // See models/Transaction.ts — set only via POST/DELETE /api/transactions/[id]/files/[kind].

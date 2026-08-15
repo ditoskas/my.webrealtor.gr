@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_BYTES,
@@ -37,8 +38,10 @@ export async function POST(request: Request) {
 
     const uploaded: PropertyImage[] = [];
     for (const file of files) {
-      const extension = ALLOWED_IMAGE_TYPES[file.type];
-      if (!extension) {
+      // ALLOWED_IMAGE_TYPES still gates which *input* types are accepted, but every upload is
+      // re-encoded to WebP below (smaller files, one consistent format on disk) regardless of
+      // what came in — so the saved extension is always "webp", not this input extension.
+      if (!ALLOWED_IMAGE_TYPES[file.type]) {
         return NextResponse.json({ message: `Unsupported file type: ${file.type || "unknown"}` }, { status: 400 });
       }
       if (file.size > MAX_UPLOAD_SIZE_BYTES) {
@@ -46,9 +49,10 @@ export async function POST(request: Request) {
       }
 
       const id = randomUUID();
-      const filename = `${id}.${extension}`;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(path.join(targetDir, filename), buffer);
+      const filename = `${id}.webp`;
+      const inputBuffer = Buffer.from(await file.arrayBuffer());
+      const webpBuffer = await sharp(inputBuffer).webp({ quality: 82 }).toBuffer();
+      await writeFile(path.join(targetDir, filename), webpBuffer);
 
       uploaded.push({
         id,

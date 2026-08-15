@@ -1,25 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Button, Card } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
-import { useAppDispatch, useTranslation } from "@/store/hooks";
-import { setUser } from "@/store/authSlice";
-import { setLocale } from "@/store/localeSlice";
-import { MessageHandler } from "@/helpers/messageHandler";
-import { getDisplayName } from "@/lib/displayName";
+import { useTranslation } from "@/store/hooks";
 import type { LoginResponse } from "@/lib/types";
 import logo from "@/assets/img/webrealtor-logo.png";
 import sharedStyles from "@/styles/shared.module.scss";
 import styles from "./LoginPage.module.scss";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
   const t = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,16 +24,14 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post<LoginResponse>("/api/auth/login", { email, password });
-      dispatch(setUser(response.data.user));
-      // The account's own stored language preference wins over whatever store/localeSlice's
-      // LocaleHydrator guessed from localStorage — see lib/types.ts's User.language doc comment.
-      dispatch(setLocale(response.data.user.language));
-      MessageHandler.success(dispatch, t("auth.welcomeMessage", { name: getDisplayName(response.data.user) }));
-      router.push("/dashboard");
+      await apiClient.post<LoginResponse>("/api/auth/login", { email, password });
+      // Hard navigation, not router.push/dispatch(setUser(...)) — a client-side transition
+      // would carry over whatever Redux/router-cache state this tab had from a previous
+      // session (e.g. another user's data). A full reload forces DashboardShell to
+      // re-hydrate everything from scratch off the freshly-set session cookie.
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(getErrorMessage(err, t("auth.invalidCredentials")));
-    } finally {
       setLoading(false);
     }
   };
