@@ -1,8 +1,16 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import { randomUUID } from "crypto";
 import { baseSchemaOptions } from "@/lib/mongooseSchemaOptions";
 
 export interface IRealtor extends Document {
   userId?: mongoose.Types.ObjectId | null;
+  // Public API identifier — the credential a third-party site (e.g. this realtor's own website)
+  // passes to GET /api/public/properties to fetch their listings. Always server-generated (same
+  // discipline as MessageForm.guid, see models/MessageForm.ts), never accepted from a request
+  // body. Realtors that existed before this field was added are backfilled once via
+  // scripts/backfill-realtor-guids.ts (wired into predev); every Realtor created from here on gets
+  // one automatically via the schema default below.
+  guid: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -35,6 +43,7 @@ type IRealtorModel = Model<IRealtor>;
 const realtorSchema = new Schema<IRealtor, IRealtorModel>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    guid: { type: String, required: true, unique: true, default: () => randomUUID() },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     phone: { type: String, default: "" },

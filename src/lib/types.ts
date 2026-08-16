@@ -55,6 +55,9 @@ export interface JwtPayload {
 export interface Realtor {
   id: string;
   userId?: string | null;
+  // Public API identifier — see models/Realtor.ts. Passed as `guid` to GET
+  // /api/public/properties by a third-party site to fetch this realtor's listings.
+  guid: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -86,7 +89,7 @@ export interface Realtor {
 
 export type RealtorInput = Omit<
   Realtor,
-  "id" | "userId" | "createdAt" | "updatedAt" | "clientCount" | "propertyCount" | "landCount"
+  "id" | "userId" | "guid" | "createdAt" | "updatedAt" | "clientCount" | "propertyCount" | "landCount"
 >;
 
 // Clients

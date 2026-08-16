@@ -13,6 +13,10 @@ class RealtorRepository extends BaseRepository<IRealtor> {
   findByEmail(email: string) {
     return this.model.findOne({ email }).exec();
   }
+
+  findByGuid(guid: string) {
+    return this.model.findOne({ guid }).exec();
+  }
 }
 
 export const realtorRepository = new RealtorRepository();

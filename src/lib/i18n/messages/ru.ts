@@ -128,6 +128,8 @@ const ru: Messages = {
       noLocation: "Информация о расположении не указана.",
       accountTitle: "Учётная запись",
       noAccount: "Учётная запись не привязана.",
+      publicApiTitle: "Публичный API",
+      publicApiDescription: "Передавайте это значение как guid в GET /api/public/properties, чтобы получить объявления этого риелтора на его собственном сайте.",
     },
     image: {
       upload: "Загрузить фото",

@@ -164,7 +164,12 @@ when asked.
   10%, applied to buy/rent actions respectively). `RealtorService.list()` merges **derived, not stored**
   `clientCount`/`propertyCount`/`landCount` (parallel `countDocuments`) — absent right after create/
   update, present on `list()`. View page `/realtors/[id]/view` (every role). Realtors/Logs nav moved into
-  Settings' own sidebar (same routes, same Root-only gating, just relocated).
+  Settings' own sidebar (same routes, same Root-only gating, just relocated). Also has a `guid`
+  (server-generated, unique, never client-settable — same discipline as `MessageForm.guid`) that
+  identifies the realtor to `GET /api/public/properties` (see "Messages"/PUBLIC_API.md below); shown
+  read-only on the View page's "Public API" card, Root-only. Pre-existing realtors were backfilled
+  by `scripts/backfill-realtor-guids.ts` (idempotent, wired into `predev`/`predev:docker`) — every
+  realtor created from here on gets one automatically via the schema default.
 
 - **User management** — Full CRUD. Model: email/password(hashed, `select:false`)/role/realtorId/
   language(en|el|ru, self-service only via Profile). `UserRepository.updateWithPassword()` uses `.save()`
@@ -209,6 +214,17 @@ when asked.
   discipline as every other email in this app). Received messages surface on their own top-level
   `/messages` page (every role, realtor-scoped like Clients/Properties — see "Data scoping by
   realtor"), paginated like `/logs`.
+
+- **Public property listings API** — the second `/api/public/**` endpoint, `GET
+  /api/public/properties` (see PUBLIC_API.md for the full contract). Lets a realtor's own website
+  pull that realtor's active/pending `Property` listings, keyed by the realtor's own `guid` (a
+  **different** guid from `MessageForm.guid` above — see "Realtor management" — one identifies a
+  realtor's whole listing set, the other one contact form). Optional filters: `type` (a
+  PropertyCategory slug, resolved via `PropertyCategoryService.findBySlug`), `action`
+  (`transactionType`: sale|rent), `minPrice`/`maxPrice`. `PropertyRepository.findPublicByRealtorId`
+  always restricts to `status: active|pending` — that's fixed, not a caller-controlled filter.
+  Response strips `clientId`/`realtorId` (internal refs) and populates `propertyCategoryId` into a
+  `propertyCategory: { id, name, slug }` object; every other `*Id` ref stays a raw ObjectId.
 
 - **Client management** — Belongs to a Realtor. Model: gender(nullable, Male|Female only)/firstName/
   lastName/tin/city/address/zipcode/email/phone/mobile/realtorId. `GET /api/clients` takes optional
@@ -370,6 +386,12 @@ Footer's live ticking clock (seconds-resolution, no date component) still uses
 - **Docker**: `docker-compose.yml` builds the `backend` service from `./src` (`Dockerfile.dev`
   bind-mounted for dev, `Dockerfile` multi-stage for prod). No Redis (dropped from the backend.think.cms
   template — add back only if a real caching need arises).
+- **Production deploy**: not part of this repo — driven by the Ansible playbooks in
+  `C:\ThinkPozitive\server-scripts` (`ansible/playbooks/deployments/deployment-webrealtor-backend.yml`,
+  which imports `ansible/partials/nodejs/build-nextjs.yml`: clones this repo fresh into `tmp/backend`,
+  `npm install && npm run build` in `tmp/backend/src`, then copies the build output into `www/backend`
+  and restarts the app under PM2). Also runs this app's `npm run predev` seeders post-build, since they
+  only fire on `next dev` locally.
 
 ## Status
 
@@ -378,7 +400,8 @@ attribution), Auth (login/logout/session/role gating, Logs page), self-service R
 Settings pool entities, Property/Realtor/Client View Pages, Price History, Notes, Files/Attachments (+
 `EntityDetailTabs`/`Modal`), Owns/Interest For/Viewings (Client-only tabs), Transactions, Dashboard (real
 aggregates), self-service Profile, i18n infra with every feature translated, Messages (Root-only
-Message Form config + public intake API, see `PUBLIC_API.md`).
+Message Form config + public intake API), public property listings API (`GET
+/api/public/properties`) — see `PUBLIC_API.md` for both.
 
 **Still skeleton-only**: the Property Options Settings tab (placeholder text only, no backing entity).
 

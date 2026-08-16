@@ -96,7 +96,7 @@ A `201` response does not guarantee the notification email was delivered — sen
 best-effort (same discipline as every other email in this app, see CLAUDE.md → registration
 email). The submission is durably stored either way.
 
-### Example: plain HTML form
+### Example: plain HTML form (message)
 
 ```html
 <form id="contact-form">
@@ -130,4 +130,84 @@ email). The submission is durably stored either way.
     }
   });
 </script>
+```
+
+---
+
+## `GET /api/public/properties`
+
+Returns a realtor's own **active or pending** property listings (never `inactive` ones — that
+status isn't exposed publicly, and isn't one of the filters below). Meant for a realtor's own
+website to pull its own listings and render them, e.g. as a "current listings" page.
+
+Unauthenticated by design, same as `POST /api/public/message` — but note this endpoint is keyed
+by a **different guid**: a `Realtor.guid` (one per realtor, identifies *all* of that realtor's
+listings), not a `MessageForm.guid` (one per contact form, identifies where a submission should be
+emailed). The two are unrelated identifiers on different models and are never interchangeable. A
+realtor's guid is generated automatically (`models/Realtor.ts`) and is visible to a Root user on
+that realtor's View page ("Public API" card).
+
+### CORS
+
+Cross-origin requests are allowed from any origin:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+```
+Browsers will send a preflight `OPTIONS` request first; this endpoint answers it with `204` and
+the headers above.
+
+### Request
+
+`GET /api/public/properties?guid=...&type=...&action=...&minPrice=...&maxPrice=...`
+
+All filters are optional query string parameters and can be combined.
+
+| Param      | Type   | Required | Notes                                                                 |
+|------------|--------|----------|-------------------------------------------------------------------------|
+| `guid`     | string | yes      | The realtor's own guid (see above) — identifies whose listings to return. |
+| `type`     | string | no       | A Property Category **slug** (Settings → Property Category, e.g. `diamerisma`). Unknown slug → `400`. |
+| `action`   | string | no       | `sale` or `rent` — matches `Property.transactionType`. Any other value → `400`. |
+| `minPrice` | number | no       | Inclusive lower bound on `price`. Negative/non-numeric → `400`.          |
+| `maxPrice` | number | no       | Inclusive upper bound on `price`. Negative/non-numeric, or below `minPrice` → `400`. |
+
+### Response
+
+Follows the [response envelope](#response-envelope) above; `payload` is an array of property
+objects (empty array, not an error, when nothing matches). Each object is the property's full
+`toJSON()` shape (see `models/Property.ts` — same ~90 fields the internal app works with:
+description, area, rooms, energy/construction/technical flags, location, `images`, etc.) with two
+changes for the public contract:
+- `clientId` and `realtorId` are stripped (internal refs — the client is the property's private
+  owner record, and the realtor is already implied by `guid`).
+- `propertyCategoryId` is replaced by a populated `propertyCategory: { id, name, slug }` object
+  (or `null`), since a bare ObjectId is meaningless to a caller with no access to the internal
+  Settings API. Every other `*Id` ref (`energyClassId`, `heatingSystemId`, etc.) is still a raw
+  ObjectId — not populated, out of scope for this endpoint today.
+
+| Status | Body                                                                        | Meaning                                    |
+|--------|-------------------------------------------------------------------------------|----------------------------------------------|
+| 200    | `{ "success": true, "payload": [ { ... }, ... ], "message": "" }`             | Query executed (possibly zero results).      |
+| 400    | `{ "success": false, "payload": null, "message": "Invalid request" }`         | Missing `guid`, or an invalid `type`/`action`/`minPrice`/`maxPrice`. |
+| 404    | `{ "success": false, "payload": null, "message": "Not found" }`               | `guid` doesn't match any realtor.             |
+| 500    | `{ "success": false, "payload": null, "message": "Internal server error" }`   | Unexpected failure.                           |
+
+### Example
+
+```js
+const response = await fetch(
+  "https://my.webrealtor.gr/api/public/properties?" +
+    new URLSearchParams({
+      guid: "9c6f2b1a-9e2d-4b2b-8a3e-1f2c3d4e5f6a",
+      type: "diamerisma",
+      action: "sale",
+      minPrice: "100000",
+      maxPrice: "300000",
+    })
+);
+const { success, payload } = await response.json();
+if (success) {
+  payload.forEach((property) => console.log(property.title, property.price));
+}
 ```

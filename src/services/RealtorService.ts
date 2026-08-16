@@ -43,6 +43,12 @@ export class RealtorService {
     return realtorRepository.findByEmail(email);
   }
 
+  // Resolves the credential GET /api/public/properties receives — see PUBLIC_API.md.
+  static async findByGuid(guid: string) {
+    await connectDB();
+    return realtorRepository.findByGuid(guid);
+  }
+
   static async create(data: Partial<IRealtor>) {
     await connectDB();
     return realtorRepository.create(data);

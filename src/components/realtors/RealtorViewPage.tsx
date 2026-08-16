@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Phone, Smartphone, MapPin, ExternalLink, Home, Users, LandPlot, UserRound } from "lucide-react";
 import { Card } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
-import { useTranslation } from "@/store/hooks";
+import { useCurrentUser, useTranslation } from "@/store/hooks";
 import type { ApiResponse, Realtor, User } from "@/lib/types";
 import EntityDetailTabs from "@/components/entityDetails/EntityDetailTabs";
 import RealtorImageUpload from "./RealtorImageUpload";
@@ -19,6 +19,7 @@ interface RealtorViewPageProps {
 export default function RealtorViewPage({ realtorId }: RealtorViewPageProps) {
   const router = useRouter();
   const t = useTranslation();
+  const currentUser = useCurrentUser();
 
   const [realtor, setRealtor] = useState<Realtor | null>(null);
   const [accountUser, setAccountUser] = useState<User | null>(null);
@@ -162,6 +163,18 @@ export default function RealtorViewPage({ realtorId }: RealtorViewPageProps) {
             <p className={styles.emptyText}>{t("realtors.view.noAccount")}</p>
           )}
         </Card>
+
+        {currentUser?.role === "Root" && (
+          <Card className={styles.card}>
+            <h3 className={styles.cardTitle}>{t("realtors.view.publicApiTitle")}</h3>
+            <div className={styles.contactBlock}>
+              <span className={styles.contactLink}>
+                <span>{realtor.guid}</span>
+              </span>
+            </div>
+            <p className={styles.emptyText}>{t("realtors.view.publicApiDescription")}</p>
+          </Card>
+        )}
       </div>
 
       <Card className={styles.card}>

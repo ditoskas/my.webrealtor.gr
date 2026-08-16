@@ -128,6 +128,8 @@ const en = {
       noLocation: "No location information provided.",
       accountTitle: "Login Account",
       noAccount: "No login account linked.",
+      publicApiTitle: "Public API",
+      publicApiDescription: "Pass this as the guid to GET /api/public/properties to pull this realtor's listings into their own website.",
     },
     image: {
       upload: "Upload Photo",

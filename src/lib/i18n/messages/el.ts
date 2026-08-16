@@ -128,6 +128,8 @@ const el: Messages = {
       noLocation: "Δεν έχουν καταχωρηθεί στοιχεία τοποθεσίας.",
       accountTitle: "Λογαριασμός Σύνδεσης",
       noAccount: "Δεν έχει συνδεθεί λογαριασμός.",
+      publicApiTitle: "Δημόσιο API",
+      publicApiDescription: "Χρησιμοποιήστε το ως guid στο GET /api/public/properties για να αντλήσετε τις καταχωρήσεις αυτού του μεσίτη στον δικό του ιστότοπο.",
     },
     image: {
       upload: "Μεταφόρτωση Φωτογραφίας",

@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/mongodb";
-import { propertyRepository } from "@/repositories/PropertyRepository";
+import { propertyRepository, type PublicPropertyFilters } from "@/repositories/PropertyRepository";
 import type { IProperty } from "@/models/Property";
 
 // Root sees every realtor's listings via list(); Administrator/Operator are scoped to their own via
@@ -24,6 +24,12 @@ export class PropertyService {
   static async listForClient(clientId: string) {
     await connectDB();
     return propertyRepository.findByClientId(clientId);
+  }
+
+  // Backs GET /api/public/properties — see PUBLIC_API.md.
+  static async listPublicForRealtor(realtorId: string, filters: PublicPropertyFilters) {
+    await connectDB();
+    return propertyRepository.findPublicByRealtorId(realtorId, filters);
   }
 
   static async get(id: string) {
