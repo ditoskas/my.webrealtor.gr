@@ -6,7 +6,7 @@ import { User } from "@/models/User";
 // layer) — a Root user is just an email/password/role, and its realtorId is always null
 // (enforced by the schema's pre("validate") hook regardless of what's passed here).
 const ROOT_USER = {
-  email: "dimitris@thinkpozitive.net",
+  email: "ditoskas@gmail.com",
   password: "2521020995",
   role: "Root" as const,
 };

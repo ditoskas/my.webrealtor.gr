@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       postcode: body.realtor?.postcode?.trim() ?? "",
       googleMapsUrl: body.realtor?.googleMapsUrl?.trim() ?? "",
       website: body.realtor?.website?.trim() ?? "",
+      realtorNumber: body.realtor?.realtorNumber?.trim() ?? "",
       saleCommission: typeof body.realtor?.saleCommission === "number" ? body.realtor.saleCommission : null,
       rentCommission: typeof body.realtor?.rentCommission === "number" ? body.realtor.rentCommission : null,
     });

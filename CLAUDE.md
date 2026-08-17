@@ -387,7 +387,8 @@ Footer's live ticking clock (seconds-resolution, no date component) still uses
   bind-mounted for dev, `Dockerfile` multi-stage for prod). No Redis (dropped from the backend.think.cms
   template — add back only if a real caching need arises).
 - **Production deploy**: not part of this repo — driven by the Ansible playbooks in
-  `C:\ThinkPozitive\server-scripts` (`ansible/playbooks/deployments/deployment-webrealtor-backend.yml`,
+  `C:\ThinkPositive\thinkpozitive.net\server-scripts`
+  (`ansible/playbooks/deployments/deployment-webrealtor-backend.yml`,
   which imports `ansible/partials/nodejs/build-nextjs.yml`: clones this repo fresh into `tmp/backend`,
   `npm install && npm run build` in `tmp/backend/src`, then copies the build output into `www/backend`
   and restarts the app under PM2). Also runs this app's `npm run predev` seeders post-build, since they

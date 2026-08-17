@@ -1,6 +1,6 @@
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { messageFormRepository } from "@/repositories/MessageFormRepository";
-import type { IMessageForm } from "@/models/MessageForm";
 
 // Managed only by Root, as an action on the Realtors section (RealtorMessageFormsPage always
 // calls listForRealtor for one fixed realtorId) — see CLAUDE.md → "Messages". list() exists for
@@ -30,7 +30,12 @@ export class MessageFormService {
   // models/MessageForm.ts's schema default), so a caller can't set/predict it.
   static async create(data: { realtorId: string; slug: string; subject: string; recipient: string }) {
     await connectDB();
-    return messageFormRepository.create(data as Partial<IMessageForm>);
+    return messageFormRepository.create({
+      realtorId: new mongoose.Types.ObjectId(data.realtorId),
+      slug: data.slug,
+      subject: data.subject,
+      recipient: data.recipient,
+    });
   }
 
   static async update(id: string, data: { slug: string; subject: string; recipient: string }) {
