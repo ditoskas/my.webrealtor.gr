@@ -296,6 +296,7 @@ const el: Messages = {
       maxPrice: "Μέγιστη Τιμή",
       text: "Αναζήτηση",
       textPlaceholder: "Αναζήτηση με ιδιοκτήτη ή τοποθεσία...",
+      tags: "Ετικέτες",
     },
     status: {
       active: "Ενεργή",
