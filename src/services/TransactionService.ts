@@ -3,7 +3,7 @@ import { transactionRepository } from "@/repositories/TransactionRepository";
 import type { ITransaction } from "@/models/Transaction";
 
 // Root sees every realtor's transactions via list(); Administrator/Operator are scoped to their
-// own via listForRealtor() — same split as ClientService/PropertyService/LandService.
+// own via listForRealtor() — same split as ClientService/AssetService.
 export class TransactionService {
   static async list() {
     await connectDB();

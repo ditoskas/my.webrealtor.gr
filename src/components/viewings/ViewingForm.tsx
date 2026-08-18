@@ -11,11 +11,10 @@ import { useTranslation } from "@/store/hooks";
 import {
   INTEREST_FOR_LISTING_TYPES,
   type ApiResponse,
+  type Asset,
   type Attachment,
   type FloorLevel,
-  type Land,
   type LandCategory,
-  type Property,
   type PropertyCategory,
   type ViewingInput,
 } from "@/lib/types";
@@ -40,8 +39,7 @@ const EMPTY_VALUES: ViewingFormValues = {
 interface ViewingFormProps {
   initialValues?: Partial<ViewingFormValues>;
   clientId: string;
-  propertyListings: Property[];
-  landListings: Land[];
+  listings: Asset[];
   propertyCategories: PropertyCategory[];
   floorLevels: FloorLevel[];
   landCategories: LandCategory[];
@@ -57,8 +55,7 @@ interface ViewingFormProps {
 export default function ViewingForm({
   initialValues,
   clientId,
-  propertyListings,
-  landListings,
+  listings,
   propertyCategories,
   floorLevels,
   landCategories,
@@ -81,7 +78,7 @@ export default function ViewingForm({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [listingError, setListingError] = useState<string | null>(null);
 
-  const listingOptions = values.listingType === "Property" ? propertyListings : landListings;
+  const listingOptions = listings.filter((asset) => asset.isLand === (values.listingType === "Land"));
 
   const handleListingTypeChange = (listingType: ViewingFormValues["listingType"]) => {
     // Listing options differ per type — a previously picked listing id would silently point at
@@ -221,7 +218,7 @@ export default function ViewingForm({
           placeholder={t("common.selectPlaceholder")}
           options={listingOptions.map((listing) => ({
             value: listing.id,
-            label: listingLabel(listing, values.listingType, propertyCategories, floorLevels, landCategories),
+            label: listingLabel(listing, propertyCategories, floorLevels, landCategories),
           }))}
         />
         {listingError && <p className={sharedStyles.errorText}>{listingError}</p>}

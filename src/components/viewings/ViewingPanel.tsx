@@ -7,11 +7,10 @@ import apiClient from "@/lib/apiClient";
 import { useCanEdit, useCurrentUser, useTranslation } from "@/store/hooks";
 import type {
   ApiResponse,
+  Asset,
   Attachment,
   FloorLevel,
-  Land,
   LandCategory,
-  Property,
   PropertyCategory,
   Viewing,
 } from "@/lib/types";
@@ -40,8 +39,7 @@ export default function ViewingPanel({ clientId, realtorId }: ViewingPanelProps)
   const effectiveRealtorId = user?.role === "Root" ? realtorId : (user?.realtorId ?? undefined);
 
   const [viewings, setViewings] = useState<Viewing[]>([]);
-  const [propertyListings, setPropertyListings] = useState<Property[]>([]);
-  const [landListings, setLandListings] = useState<Land[]>([]);
+  const [listings, setListings] = useState<Asset[]>([]);
   const [propertyCategories, setPropertyCategories] = useState<PropertyCategory[]>([]);
   const [floorLevels, setFloorLevels] = useState<FloorLevel[]>([]);
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
@@ -56,17 +54,13 @@ export default function ViewingPanel({ clientId, realtorId }: ViewingPanelProps)
   useEffect(() => {
     if (!effectiveRealtorId) return;
     apiClient
-      .get<ApiResponse<Property[]>>(`/api/properties?realtorId=${effectiveRealtorId}`)
-      .then((response) => setPropertyListings(response.data.data))
-      .catch(() => setPropertyListings([]));
-    apiClient
-      .get<ApiResponse<Land[]>>(`/api/lands?realtorId=${effectiveRealtorId}`)
-      .then((response) => setLandListings(response.data.data))
-      .catch(() => setLandListings([]));
+      .get<ApiResponse<Asset[]>>(`/api/assets?realtorId=${effectiveRealtorId}`)
+      .then((response) => setListings(response.data.data))
+      .catch(() => setListings([]));
   }, [effectiveRealtorId]);
 
   // Category/Floor pool entities — used only to build a richer label per listing option in
-  // ViewingForm's picker (Category · Floor · Address), same lookups PropertyDetail's own
+  // ViewingForm's picker (Category · Floor · Address), same lookups AssetDetail's own
   // dropdowns already fetch.
   useEffect(() => {
     apiClient
@@ -134,8 +128,7 @@ export default function ViewingPanel({ clientId, realtorId }: ViewingPanelProps)
       ) : (
         <ViewingTable
           viewings={viewings}
-          propertyListings={propertyListings}
-          landListings={landListings}
+          listings={listings}
           propertyCategories={propertyCategories}
           floorLevels={floorLevels}
           landCategories={landCategories}
@@ -148,8 +141,7 @@ export default function ViewingPanel({ clientId, realtorId }: ViewingPanelProps)
       <AddViewingModal
         isOpen={isAddOpen}
         clientId={clientId}
-        propertyListings={propertyListings}
-        landListings={landListings}
+        listings={listings}
         propertyCategories={propertyCategories}
         floorLevels={floorLevels}
         landCategories={landCategories}
@@ -162,8 +154,7 @@ export default function ViewingPanel({ clientId, realtorId }: ViewingPanelProps)
         isOpen={!!viewingToEdit}
         clientId={clientId}
         viewing={viewingToEdit}
-        propertyListings={propertyListings}
-        landListings={landListings}
+        listings={listings}
         propertyCategories={propertyCategories}
         floorLevels={floorLevels}
         landCategories={landCategories}

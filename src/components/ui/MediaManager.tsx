@@ -18,9 +18,8 @@ interface MediaManagerProps {
 }
 
 // Generic drag-and-drop upload dropzone + editable, reorderable image gallery — reused as-is by
-// PropertyMediaPage and LandMediaPage (the two entities' images share the exact same shape and
-// upload flow, only the save endpoint differs, which those pages own, not this component). Two
-// separate drag-and-drop interactions live here: dropping files onto the dropzone uploads them,
+// AssetMediaPage (property and land assets share the exact same images shape and upload flow).
+// Two separate drag-and-drop interactions live here: dropping files onto the dropzone uploads them,
 // dragging a gallery card onto another reorders the array — native HTML5 DnD for both, no extra
 // dependency.
 export default function MediaManager({ images, uploading, onFilesSelected, onImageChange, onRemove, onReorder }: MediaManagerProps) {

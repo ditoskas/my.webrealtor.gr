@@ -1,8 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { realtorRepository } from "@/repositories/RealtorRepository";
 import { ClientService } from "./ClientService";
-import { PropertyService } from "./PropertyService";
-import { LandService } from "./LandService";
+import { AssetService } from "./AssetService";
 import type { IRealtor } from "@/models/Realtor";
 
 // Admin manages every realtor; a Realtor-role caller should be scoped to their own
@@ -20,8 +19,8 @@ export class RealtorService {
       realtors.map(async (realtor) => {
         const [clientCount, propertyCount, landCount] = await Promise.all([
           ClientService.countForRealtor(realtor.id),
-          PropertyService.countForRealtor(realtor.id),
-          LandService.countForRealtor(realtor.id),
+          AssetService.countForRealtor(realtor.id, false),
+          AssetService.countForRealtor(realtor.id, true),
         ]);
         return {
           ...(realtor.toJSON() as unknown as Record<string, unknown>),
@@ -43,7 +42,7 @@ export class RealtorService {
     return realtorRepository.findByEmail(email);
   }
 
-  // Resolves the credential GET /api/public/properties receives — see PUBLIC_API.md.
+  // Resolves the credential GET /api/public/assets receives — see PUBLIC_API.md.
   static async findByGuid(guid: string) {
     await connectDB();
     return realtorRepository.findByGuid(guid);

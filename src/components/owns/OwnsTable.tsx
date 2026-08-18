@@ -1,10 +1,8 @@
 import { Eye } from "lucide-react";
-import type { Land, LandCategory, Property, PropertyCategory, PropertyStatus } from "@/lib/types";
+import type { Asset, LandCategory, PropertyCategory, PropertyStatus } from "@/lib/types";
 import { Card, Button, Badge } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
 import sharedStyles from "@/styles/shared.module.scss";
-
-export type OwnedListing = ({ kind: "Property" } & Property) | ({ kind: "Land" } & Land);
 
 const STATUS_VARIANT: Record<PropertyStatus, "active" | "pending" | "inactive"> = {
   active: "active",
@@ -13,19 +11,19 @@ const STATUS_VARIANT: Record<PropertyStatus, "active" | "pending" | "inactive"> 
 };
 
 interface OwnsTableProps {
-  listings: OwnedListing[];
+  listings: Asset[];
   propertyCategories: PropertyCategory[];
   landCategories: LandCategory[];
-  onView: (listing: OwnedListing) => void;
+  onView: (listing: Asset) => void;
 }
 
 export default function OwnsTable({ listings, propertyCategories, landCategories, onView }: OwnsTableProps) {
   const t = useTranslation();
 
-  const categoryName = (listing: OwnedListing) => {
-    const categoryId = listing.kind === "Property" ? listing.propertyCategoryId : listing.landCategoryId;
+  const categoryName = (listing: Asset) => {
+    const categoryId = listing.isLand ? listing.landCategoryId : listing.propertyCategoryId;
     if (!categoryId) return "—";
-    const list = listing.kind === "Property" ? propertyCategories : landCategories;
+    const list = listing.isLand ? landCategories : propertyCategories;
     return list.find((category) => category.id === categoryId)?.name ?? "—";
   };
 
@@ -54,11 +52,13 @@ export default function OwnsTable({ listings, propertyCategories, landCategories
               </tr>
             ) : (
               listings.map((listing) => (
-                <tr key={`${listing.kind}-${listing.id}`} className="hover:bg-neutral-50/60">
+                <tr key={listing.id} className="hover:bg-neutral-50/60">
                   <td className="px-6 py-4">
                     <Badge variant={STATUS_VARIANT[listing.status]}>{t(`owns.status.${listing.status}`)}</Badge>
                   </td>
-                  <td className="px-6 py-4 text-sm text-neutral-600">{t(`owns.listingType.${listing.kind}`)}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-600">
+                    {t(`owns.listingType.${listing.isLand ? "Land" : "Property"}`)}
+                  </td>
                   <td className="px-6 py-4 text-sm text-neutral-600">
                     {t(`owns.transactionType.${listing.transactionType}`)}
                   </td>

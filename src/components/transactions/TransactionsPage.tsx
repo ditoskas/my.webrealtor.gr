@@ -9,11 +9,10 @@ import { MessageHandler } from "@/helpers/messageHandler";
 import { useAppDispatch, useCanEdit, useCurrentUser, useTranslation } from "@/store/hooks";
 import type {
   ApiResponse,
+  Asset,
   Client,
   FloorLevel,
-  Land,
   LandCategory,
-  Property,
   PropertyCategory,
   Realtor,
   Transaction,
@@ -36,8 +35,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [realtors, setRealtors] = useState<Realtor[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [propertyListings, setPropertyListings] = useState<Property[]>([]);
-  const [landListings, setLandListings] = useState<Land[]>([]);
+  const [listings, setListings] = useState<Asset[]>([]);
   const [propertyCategories, setPropertyCategories] = useState<PropertyCategory[]>([]);
   const [floorLevels, setFloorLevels] = useState<FloorLevel[]>([]);
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
@@ -80,21 +78,18 @@ export default function TransactionsPage() {
         const scoped = !isRoot;
         const transactionsUrl = scoped ? `/api/transactions?realtorId=${user.realtorId}` : "/api/transactions";
         const clientsUrl = scoped ? `/api/clients?realtorId=${user.realtorId}` : "/api/clients";
-        const propertiesUrl = scoped ? `/api/properties?realtorId=${user.realtorId}` : "/api/properties";
-        const landsUrl = scoped ? `/api/lands?realtorId=${user.realtorId}` : "/api/lands";
+        const assetsUrl = scoped ? `/api/assets?realtorId=${user.realtorId}` : "/api/assets";
 
-        const [transactionsRes, clientsRes, propertiesRes, landsRes, realtorsRes] = await Promise.all([
+        const [transactionsRes, clientsRes, assetsRes, realtorsRes] = await Promise.all([
           apiClient.get<ApiResponse<Transaction[]>>(transactionsUrl),
           apiClient.get<ApiResponse<Client[]>>(clientsUrl),
-          apiClient.get<ApiResponse<Property[]>>(propertiesUrl),
-          apiClient.get<ApiResponse<Land[]>>(landsUrl),
+          apiClient.get<ApiResponse<Asset[]>>(assetsUrl),
           isRoot ? apiClient.get<ApiResponse<Realtor[]>>("/api/realtors") : Promise.resolve(null),
         ]);
 
         setTransactions(transactionsRes.data.data);
         setClients(clientsRes.data.data);
-        setPropertyListings(propertiesRes.data.data);
-        setLandListings(landsRes.data.data);
+        setListings(assetsRes.data.data);
         if (realtorsRes) setRealtors(realtorsRes.data.data);
         setError(null);
         if (!options?.silent) {
@@ -163,8 +158,7 @@ export default function TransactionsPage() {
         <TransactionTable
           transactions={transactions}
           clients={clients}
-          propertyListings={propertyListings}
-          landListings={landListings}
+          listings={listings}
           propertyCategories={propertyCategories}
           floorLevels={floorLevels}
           landCategories={landCategories}

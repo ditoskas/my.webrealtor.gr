@@ -1,7 +1,0 @@
-@use "../../styles/mixins" as m;
-
-.card {
-  @include m.card;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-}

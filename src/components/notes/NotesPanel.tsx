@@ -58,7 +58,7 @@ export default function NotesPanel({ entityType, entityId }: NotesPanelProps) {
   }, [loadNotes]);
 
   // Resolve only the users actually referenced by these notes, not the whole /api/users list —
-  // this panel is reachable by every role, same reasoning as PropertyViewPage's price history.
+  // this panel is reachable by every role, same reasoning as AssetViewPage's price history.
   useEffect(() => {
     const ids = Array.from(new Set(notes.map((note) => note.userId).filter((id): id is string => !!id)));
     const missing = ids.filter((id) => !(id in userEmails));

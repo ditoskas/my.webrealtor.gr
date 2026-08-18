@@ -1,5 +1,5 @@
 import { ExternalLink, FileSignature, Pencil, Receipt, Trash2 } from "lucide-react";
-import type { Client, FloorLevel, Land, LandCategory, Property, PropertyCategory, Transaction, TransactionFileKind } from "@/lib/types";
+import type { Asset, Client, FloorLevel, LandCategory, PropertyCategory, Transaction, TransactionFileKind } from "@/lib/types";
 import { Card, Button, Badge } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
 import { formatDate } from "@/lib/formatDate";
@@ -9,8 +9,7 @@ import sharedStyles from "@/styles/shared.module.scss";
 interface TransactionTableProps {
   transactions: Transaction[];
   clients: Client[];
-  propertyListings: Property[];
-  landListings: Land[];
+  listings: Asset[];
   propertyCategories: PropertyCategory[];
   floorLevels: FloorLevel[];
   landCategories: LandCategory[];
@@ -27,8 +26,7 @@ interface TransactionTableProps {
 export default function TransactionTable({
   transactions,
   clients,
-  propertyListings,
-  landListings,
+  listings,
   propertyCategories,
   floorLevels,
   landCategories,
@@ -50,11 +48,8 @@ export default function TransactionTable({
   };
 
   const listingName = (transaction: Transaction) => {
-    const list = transaction.listingType === "Property" ? propertyListings : landListings;
-    const listing = list.find((item) => item.id === transaction.listingId);
-    return listing
-      ? listingLabel(listing, transaction.listingType, propertyCategories, floorLevels, landCategories)
-      : "—";
+    const listing = listings.find((item) => item.id === transaction.listingId);
+    return listing ? listingLabel(listing, propertyCategories, floorLevels, landCategories) : "—";
   };
 
   return (

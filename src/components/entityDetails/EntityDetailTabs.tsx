@@ -20,9 +20,8 @@ interface EntityDetailTabsProps {
   realtorId?: string;
 }
 
-// Notes and Files, tabbed — embedded directly as a page section on the Realtor/Client/Property
-// View Pages (inside a Card, no chrome of its own), and wrapped in a Modal (EntityDetailModal) for
-// Land, which has no view page of its own yet. See CLAUDE.md → "Files (Attachments)".
+// Notes and Files, tabbed — embedded directly as a page section on the Realtor/Client/Asset View
+// Pages (inside a Card, no chrome of its own). See CLAUDE.md → "Files (Attachments)".
 //
 // Three more tabs — Owns, Interest For, Viewings — are added, in that order, before Notes/Files,
 // only when entityType is "Client": unlike Notes/Attachments, none of them is polymorphic across

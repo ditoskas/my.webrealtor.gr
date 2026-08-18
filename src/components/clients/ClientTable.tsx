@@ -27,7 +27,7 @@ export default function ClientTable({
 }: ClientTableProps) {
   const t = useTranslation();
   // Actions column is always present — the View action is visible to every role, unlike
-  // Edit/Delete which stay canEdit-gated (same pattern as PropertyTable's View action).
+  // Edit/Delete which stay canEdit-gated (same pattern as AssetTable's View action).
   const columnCount = 4 + (showRealtorColumn ? 1 : 0);
 
   return (

@@ -56,7 +56,7 @@ export interface Realtor {
   id: string;
   userId?: string | null;
   // Public API identifier — see models/Realtor.ts. Passed as `guid` to GET
-  // /api/public/properties by a third-party site to fetch this realtor's listings.
+  // /api/public/assets by a third-party site to fetch this realtor's listings.
   guid: string;
   firstName: string;
   lastName: string;
@@ -122,8 +122,8 @@ export type PropertyStatus = "active" | "pending" | "inactive";
 export type TransactionType = "sale" | "rent";
 export const TRANSACTION_TYPES: TransactionType[] = ["sale", "rent"];
 
-// A listing photo — shared by Property.images and Land.images. `id` is assigned at upload time
-// (see POST /api/uploads), not a Mongo _id, so it stays stable through reordering/edits.
+// A listing photo — shared by every Asset's images. `id` is assigned at upload time (see POST
+// /api/uploads), not a Mongo _id, so it stays stable through reordering/edits.
 export interface PropertyImage {
   id: string;
   url: string;
@@ -131,18 +131,19 @@ export interface PropertyImage {
   description: string;
 }
 
-// Every *Id field below is a reference to one of the Settings pool entities documented in
-// CLAUDE.md → "Property attribute pool entities" (or to EnergyClass/HeatingSystem, the first two).
-// This shape was derived directly from auditing a real competing portal's property-edit form field
-// by field — see CLAUDE.md → Property management for the full provenance note.
-export interface Property {
+// Asset — a realtor's listing, either a property or a piece of land, merged into one entity (see
+// CLAUDE.md → "Asset management"). `isLand` is the discriminator: property-only fields (bedrooms,
+// heating, construction, ...) are unset when `isLand` is true, land-only fields (isBuildable,
+// slopeId, ...) are unset when it's false. Field shape was derived by auditing two competing
+// portals' property-edit and land-edit forms field by field — see CLAUDE.md → "Asset management"
+// for the full provenance note.
+export interface Asset {
   id: string;
   realtorId: string;
   clientId?: string | null;
 
-  // Internal-only label — the source form has no such field (portals auto-title from
-  // subtype+area+neighborhood), but the admin table needs *something* to display per row, and
-  // letting an admin override it is cheap. Never required.
+  isLand: boolean;
+
   title?: string;
   status: PropertyStatus;
 
@@ -150,17 +151,19 @@ export interface Property {
   transactionType: TransactionType;
   currency: string;
   propertyCategoryId?: string | null;
+  landCategoryId?: string | null;
   isAuction: boolean;
   price: number;
   priceNegotiable: boolean;
   commonExpenses?: number | null;
   area: number;
   lotSize?: number | null;
+  isBuildable: boolean;
   availableFrom?: string | null;
   isLeased: boolean;
   publishedAt?: string | null;
 
-  // Property description (physical layout)
+  // Property description (physical layout) — property only
   floorLevelId?: string | null;
   isWholeFloorApartment: boolean;
   levels?: number | null;
@@ -174,7 +177,7 @@ export interface Property {
   hasAttic: boolean;
   hasPlayroom: boolean;
 
-  // Heating & consumption
+  // Heating & consumption — property only
   energyClassId?: string | null;
   heatingSystemId?: string | null;
   heatingMediumId?: string | null;
@@ -183,7 +186,7 @@ export interface Property {
   hasUnderfloorHeating: boolean;
   hasNightPower: boolean;
 
-  // Construction
+  // Construction — property only
   yearBuilt?: number | null;
   isUnderConstruction: boolean;
   isUnfinished: boolean;
@@ -198,7 +201,7 @@ export interface Property {
   netArea?: number | null;
   grossArea?: number | null;
 
-  // Technical features & interior
+  // Technical features & interior — property only
   hasSecurityDoor: boolean;
   hasAlarm: boolean;
   isPainted: boolean;
@@ -215,7 +218,7 @@ export interface Property {
   floorTypeId?: string | null;
   hasSatelliteDish: boolean;
 
-  // Outdoor spaces & location on plot
+  // Outdoor spaces & location on plot — shared, plus property-only and land-only extras
   hasBalcony: boolean;
   hasAwning: boolean;
   balconyArea?: number | null;
@@ -224,95 +227,36 @@ export interface Property {
   gardenTypeId?: string | null;
   hasPool: boolean;
   hasView: boolean;
-  orientationId?: string | null;
-  isCorner: boolean;
-  isFacade: boolean;
-  zoningTypeId?: string | null;
-  isAccessibleForDisabled: boolean;
-  isCaveBuilding: boolean;
-  roadAccessTypeId?: string | null;
-  distanceFromSea?: number | null;
-  hasParking: boolean;
-
-  // Suitable for
-  suitableForStudents: boolean;
-  suitableForHoliday: boolean;
-  suitableForCommercialUse: boolean;
-  suitableForShortTermLetting: boolean;
-  suitableForMedicalOffice: boolean;
-  suitableForInvestment: boolean;
-
-  // Description — per-locale map (only "el" is exposed in the UI so far, see PropertyDetail).
-  descriptions: Record<string, string>;
-
-  // Location — not present in the source HTML (only the "Χαρακτηριστικά" tab was audited); this
-  // shape follows the location fields already used on Realtor (city/address/postcode/googleMapsUrl).
-  country?: string;
-  region?: string;
-  municipality?: string;
-  neighborhood?: string;
-  city?: string;
-  address?: string;
-  postcode?: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  googleMapsUrl?: string;
-
-  // Media
-  images: PropertyImage[];
-
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type PropertyInput = Omit<Property, "id" | "createdAt" | "updatedAt">;
-
-// Land — a distinct entity from Property (not an extension of it), for plot/land listings. Field
-// shape derived from auditing a real competing portal's land-listing edit form (the "Γη" property
-// type), same provenance method as Property. Reuses PropertyStatus/TransactionType (same enums,
-// no reason to duplicate) and several existing pool entities (Orientation, ZoningType,
-// RoadAccessType) alongside two new ones built specifically for Land: LandCategory, Slope.
-export interface Land {
-  id: string;
-  realtorId: string;
-  clientId?: string | null;
-
-  title?: string;
-  status: PropertyStatus;
-
-  // Basic info
-  transactionType: TransactionType;
-  currency: string;
-  landCategoryId?: string | null;
-  isAuction: boolean;
-  price: number;
-  priceNegotiable: boolean;
-  area: number;
-  isBuildable: boolean;
-  availableFrom?: string | null;
-
-  // Outdoor spaces & location on plot
-  hasView: boolean;
   isWithinSettlement: boolean;
   orientationId?: string | null;
   isCorner: boolean;
   isFacade: boolean;
   zoningTypeId?: string | null;
   facadeLength?: number | null;
-  distanceFromSea?: number | null;
-  slopeId?: string | null;
-  suitableForInvestment: boolean;
-  suitableForAgriculturalUse: boolean;
+  isAccessibleForDisabled: boolean;
+  isCaveBuilding: boolean;
   roadAccessTypeId?: string | null;
+  distanceFromSea?: number | null;
+  hasParking: boolean;
+  slopeId?: string | null;
   coverageRatio?: number | null;
   buildingCoefficient?: number | null;
   isAntiparoxi: boolean;
   isWithinCityPlan: boolean;
 
-  // Description — per-locale map, same convention as Property.
+  // Suitable for — suitableForInvestment is shared, the rest are property-only
+  suitableForStudents: boolean;
+  suitableForHoliday: boolean;
+  suitableForCommercialUse: boolean;
+  suitableForShortTermLetting: boolean;
+  suitableForMedicalOffice: boolean;
+  suitableForInvestment: boolean;
+  suitableForAgriculturalUse: boolean;
+
+  // Description — per-locale map (only "el" is exposed in the UI so far).
   descriptions: Record<string, string>;
 
-  // Location — same field set as Property's Location tab.
+  // Location
   country?: string;
   region?: string;
   municipality?: string;
@@ -331,7 +275,7 @@ export interface Land {
   updatedAt: string;
 }
 
-export type LandInput = Omit<Land, "id" | "createdAt" | "updatedAt">;
+export type AssetInput = Omit<Asset, "id" | "createdAt" | "updatedAt">;
 
 // Energy classes (Settings lookup list)
 

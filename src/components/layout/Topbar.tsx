@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Home, LandPlot, UserRound, Settings, Handshake, LogOut, ChevronDown, Languages, Check, UserCircle, Wrench, Receipt, List, FileSignature, ClipboardList, MessagesSquare,
+  LayoutDashboard, Users, Home, Settings, Handshake, LogOut, ChevronDown, Languages, Check, UserCircle, Wrench, Receipt, FileSignature, ClipboardList, MessagesSquare,
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { Dropdown } from "@/components/ui";
@@ -25,33 +25,26 @@ import dropdownStyles from "@/components/ui/Dropdown.module.scss";
 //
 // Rendered in three groups, not one flat map, because the "Listing" and "Tools" dropdowns are
 // interspersed between these rather than trailing them — see the nav markup below.
-const NAV_LINKS_BEFORE_LISTING = [
+const NAV_LINKS_BEFORE_TOOLS = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { href: "/clients", labelKey: "nav.clients", icon: Users },
-];
-const NAV_LINKS_BEFORE_TOOLS = [
+  // Properties and Land were merged into one Asset entity/page — see CLAUDE.md → "Asset
+  // management". One top-level link now, replacing the old "Listing" dropdown that grouped two.
+  { href: "/assets", labelKey: "nav.assets", icon: Home },
   { href: "/transactions", labelKey: "nav.transactions", icon: Handshake },
   { href: "/messages", labelKey: "nav.messages", icon: MessagesSquare },
 ];
 const NAV_LINKS_AFTER_TOOLS = [{ href: "/settings", labelKey: "nav.settings", icon: Settings }];
 
-// Properties and Land are grouped under the "Listing" dropdown rather than their own top-level
-// links — see the nav markup below.
-const LISTING_LINKS = [
-  { href: "/properties", labelKey: "nav.properties", icon: Home },
-  { href: "/lands", labelKey: "nav.land", icon: LandPlot },
-];
-
 // Root reaches every section; Administrator/Operator are restricted to these — mirrors
 // proxy.ts's ROOT_ONLY_PREFIXES (kept in sync by hand, see CLAUDE.md → Auth). Transactions and
-// Messages are deliberately accessible here, same level as Clients/Properties/Land — see
-// CLAUDE.md → "Transactions"/"Messages" (Messages is realtor-scoped like the rest; the
-// Message Forms *config* stays Root-only, reached instead via a row action on /realtors).
+// Messages are deliberately accessible here, same level as Clients/Assets — see CLAUDE.md →
+// "Transactions"/"Messages" (Messages is realtor-scoped like the rest; the Message Forms
+// *config* stays Root-only, reached instead via a row action on /realtors).
 const NON_ROOT_ALLOWED_HREFS = new Set([
   "/dashboard",
   "/clients",
-  "/properties",
-  "/lands",
+  "/assets",
   "/transactions",
   "/messages",
   "/tools",
@@ -104,8 +97,6 @@ export default function Topbar() {
     );
   };
 
-  const listingLinksVisible = LISTING_LINKS.filter((link) => isVisible(user?.role, link.href));
-
   return (
     <header className={styles.bar}>
       <div className={styles.inner}>
@@ -115,47 +106,6 @@ export default function Topbar() {
           </div>
 
           <nav className={styles.nav}>
-            {NAV_LINKS_BEFORE_LISTING.map(renderLink)}
-
-            {listingLinksVisible.length > 0 && (
-              <Dropdown
-                align="left"
-                triggerClassName={`${styles.navLink} ${styles.navDropdown} ${
-                  listingLinksVisible.some((link) => pathname?.startsWith(link.href)) ? styles.navLinkActive : ""
-                }`}
-                trigger={
-                  <>
-                    <List size={14} />
-                    <span>{t("nav.listing")}</span>
-                    <ChevronDown size={12} className={styles.navDropdownChevron} />
-                  </>
-                }
-              >
-                {(close) => (
-                  <>
-                    {listingLinksVisible.map((link) => {
-                      const Icon = link.icon;
-                      return (
-                        <button
-                          key={link.href}
-                          type="button"
-                          role="menuitem"
-                          className={dropdownStyles.item}
-                          onClick={() => {
-                            close();
-                            router.push(link.href);
-                          }}
-                        >
-                          <Icon size={14} />
-                          <span>{t(link.labelKey)}</span>
-                        </button>
-                      );
-                    })}
-                  </>
-                )}
-              </Dropdown>
-            )}
-
             {NAV_LINKS_BEFORE_TOOLS.map(renderLink)}
 
             {isVisible(user?.role, "/tools") && (

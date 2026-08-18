@@ -27,7 +27,7 @@ my.webrealtor.gr/
     ├── scripts/                 # seed-root.ts + per-pool-entity seeders, run via predev/predev:docker
     ├── app/                      # App Router — routing/composition only, no business logic
     │   ├── (auth)/               # login, signup, confirm-registration
-    │   └── (dashboard)/          # dashboard, realtors, clients, properties, lands, users, logs,
+    │   └── (dashboard)/          # dashboard, realtors, clients, assets, users, logs,
     │                             # settings, transactions, profile, plus [id]/view pages
     │   └── api/                  # route handlers → services only, never touch mongoose directly
     ├── components/               # one folder per feature/page — see Component convention
@@ -83,7 +83,7 @@ JWT-based (not Firebase). `lib/auth.ts` — `signAuthToken`/`verifyAuthToken` vi
   over) but keeps a 401→redirect-to-`/login` response interceptor.
 - `proxy.ts`: redirects to `/login` if missing/invalid; redirects an already-logged-in user away from
   `/login`; enforces role access — **Root reaches everywhere; Administrator/Operator restricted to
-  `/dashboard`, `/clients`, `/properties`, `/lands`, `/transactions`, `/profile`** (everything else
+  `/dashboard`, `/clients`, `/assets`, `/transactions`, `/profile`** (everything else
   redirects to `/dashboard`). This allowlist is **hand-duplicated** in `Topbar.tsx`'s
   `NON_ROOT_ALLOWED_HREFS` — keep the two in sync. **Optimistic check only** (cookie-based, no DB hit) —
   no route handler re-verifies the session yet (`TODO` marks every route).
@@ -145,7 +145,7 @@ when asked.
 - **Root is the only exception** — every other role is scoped, full stop.
 - Governs client-side fetch decisions today (which `?realtorId=` to pass, `list()` vs `listForRealtor()`)
   since route-handler auth doesn't exist yet — this does **not** replace that still-needed enforcement.
-- Precedent: Clients/Properties/Lands/Transactions/Dashboard all pass `?realtorId={user.realtorId}` for
+- Precedent: Clients/Assets/Transactions/Dashboard all pass `?realtorId={user.realtorId}` for
   non-Root callers, omit it (seeing everyone's) only for Root.
 
 ## Implemented features (condensed reference)
@@ -166,7 +166,7 @@ when asked.
   update, present on `list()`. View page `/realtors/[id]/view` (every role). Realtors/Logs nav moved into
   Settings' own sidebar (same routes, same Root-only gating, just relocated). Also has a `guid`
   (server-generated, unique, never client-settable — same discipline as `MessageForm.guid`) that
-  identifies the realtor to `GET /api/public/properties` (see "Messages"/PUBLIC_API.md below); shown
+  identifies the realtor to `GET /api/public/assets` (see "Messages"/PUBLIC_API.md below); shown
   read-only on the View page's "Public API" card, Root-only. Pre-existing realtors were backfilled
   by `scripts/backfill-realtor-guids.ts` (idempotent, wired into `predev`/`predev:docker`) — every
   realtor created from here on gets one automatically via the schema default.
@@ -212,46 +212,66 @@ when asked.
   already-received history) and best-effort emails the recipient a `key: value` rendering of the
   submitted JSON (`MessageService.receive`, `lib/mail.ts`'s `sendMail` — same best-effort
   discipline as every other email in this app). Received messages surface on their own top-level
-  `/messages` page (every role, realtor-scoped like Clients/Properties — see "Data scoping by
+  `/messages` page (every role, realtor-scoped like Clients/Assets — see "Data scoping by
   realtor"), paginated like `/logs`.
 
-- **Public property listings API** — the second `/api/public/**` endpoint, `GET
-  /api/public/properties` (see PUBLIC_API.md for the full contract). Lets a realtor's own website
-  pull that realtor's active/pending `Property` listings, keyed by the realtor's own `guid` (a
-  **different** guid from `MessageForm.guid` above — see "Realtor management" — one identifies a
-  realtor's whole listing set, the other one contact form). Optional filters: `type` (a
-  PropertyCategory slug, resolved via `PropertyCategoryService.findBySlug`), `action`
-  (`transactionType`: sale|rent), `minPrice`/`maxPrice`. `PropertyRepository.findPublicByRealtorId`
-  always restricts to `status: active|pending` — that's fixed, not a caller-controlled filter.
-  Response strips `clientId`/`realtorId` (internal refs) and populates `propertyCategoryId` into a
-  `propertyCategory: { id, name, slug }` object; every other `*Id` ref stays a raw ObjectId.
+- **Public listings API** — the second `/api/public/**` endpoint, `GET /api/public/assets` (see
+  PUBLIC_API.md for the full contract; renamed from `GET /api/public/properties` as part of the
+  Property+Land merge, before this app had any real external integrations to keep compatible).
+  Lets a realtor's own website pull that realtor's active/pending Asset
+  listings — both property and land, distinguished by a new `isLand` field on every payload item —
+  keyed by the realtor's own `guid` (a **different** guid from `MessageForm.guid` above — see
+  "Realtor management" — one identifies a realtor's whole listing set, the other one contact form).
+  Optional filters: `kind` (`property`/`land`, narrows to just that kind), `type` (a
+  PropertyCategory slug, property results only), `landType` (a LandCategory slug, land results
+  only), `action` (`transactionType`: sale|rent), `minPrice`/`maxPrice`.
+  `AssetRepository.findPublicByRealtorId` always restricts to `status: active|pending` — that's
+  fixed, not a caller-controlled filter. Response strips `clientId`/`realtorId` (internal refs) and
+  populates `propertyCategoryId`/`landCategoryId` into a `propertyCategory`/`landCategory`
+  `{ id, name, slug }` object depending on `isLand`; every other `*Id` ref stays a raw ObjectId.
 
 - **Client management** — Belongs to a Realtor. Model: gender(nullable, Male|Female only)/firstName/
   lastName/tin/city/address/zipcode/email/phone/mobile/realtorId. `GET /api/clients` takes optional
   `?realtorId=` (scoped vs all). Realtor `<select>`/column shown only for Root. View page
   `/clients/[id]/view`.
 
-- **Property management** — Belongs to a Realtor, optional Client owner. ~90 fields (Basic Info,
-  Description, Heating/Consumption, Construction, Technical/Interior, Outdoor/Plot, Suitable For,
-  Location, Media), 13 ObjectId refs into pool entities (`energyClassId`+`propertyCategoryId` required).
-  `descriptions` is a locale-keyed `Map`, `images` a plain URL `string[]` (no file upload). **Full-page**
-  create/edit at `/properties/new` / `/properties/[id]` (not a modal — 90 fields don't fit one), one
-  shared `PropertyDetail` component for both modes, coercion centralized in
-  `app/api/properties/parsePropertyBody.ts`. View page `/properties/[id]/view` (every role): hero+
+- **Asset management** — Property and Land were originally two separate entities/collections/nav
+  destinations; they were merged into one `Asset` model/collection/page (`/assets`), keyed by a
+  required `isLand: boolean` discriminator. Belongs to a Realtor, optional Client owner. Field set
+  is the union of the old Property (~90 fields: Basic Info, Description, Heating/Consumption,
+  Construction, Technical/Interior, Outdoor/Plot, Suitable For, Location, Media,
+  `energyClassId`+`propertyCategoryId` required) and Land (~30 fields, no bedrooms/heating/
+  construction, `landCategoryId` required) shapes — property-only fields are simply left unset on
+  a land asset and vice versa; enforcement of which fields are required per `isLand` lives in
+  `app/api/assets/parseAssetBody.ts`, not the Mongoose schema (every field there is optional at the
+  schema level). `descriptions` is a locale-keyed `Map`, `images` a plain URL `string[]` (no file
+  upload). **Full-page** create/edit at `/assets/new` / `/assets/[id]` (not a modal — too many
+  fields for one), one shared `AssetDetail` component for both modes and both kinds — a Type
+  (Property/Land) selector is editable on create and **locked on edit**, since an asset's kind is
+  fixed once created. Coercion centralized in `app/api/assets/parseAssetBody.ts`. View page
+  `/assets/[id]/view` (every role, both kinds — Land didn't have one before this merge): hero+
   thumbnails, stats bar, owner/description/price-history/technical/notes, Listing Realtor card
   (Root-only).
 
-- **Land management** — Belongs to a Realtor, optional Client owner, **distinct entity from Property**
-  (~30 fields, no bedrooms/heating/construction). 5 ObjectId refs (3 reused from Property's pool —
-  orientation/zoningType/roadAccessType — plus 2 new: `landCategoryId`(required)/`slopeId`). Same
-  full-page create/edit pattern (`/lands/new`, `/lands/[id]`), `parseLandBody.ts` mirrors Property's
-  helper. **No Land view page yet** — its Notes/Files are reached via `EntityDetailModal` (modal-wrapped
-  tabs) on `LandTable` instead.
+  Every other collection that references "a Property or a Land" (`Note`/`Attachment` via
+  `entityType`, `Viewing`/`InterestFor`/`Transaction`/`PriceHistory` via `listingType`) was **not**
+  migrated or renamed — those fields keep their existing `"Property"|"Land"` string values
+  unchanged (now read as a historical/display tag, not a routing key), and their bare, unpopulated
+  `entityId`/`listingId` ObjectId still resolves straight into the merged `assets` collection,
+  since the one-time migration (`scripts/migrate-properties-lands-to-assets.ts`, wired into
+  `predev`/`predev:docker`, idempotent) preserved every migrated document's original `_id`. The old
+  `properties`/`lands` Mongo collections are left in place afterward, untouched, as a manual
+  rollback safety net — nothing reads or writes them anymore. Every call site that used to branch
+  `listingType === "Property" ? PropertyService.get() : LandService.get()` now makes one
+  unconditional `AssetService.get()` call instead; several components that used to fetch a Property
+  list *and* a Land list and merge them client-side (Owns tab, Viewings tab, Transaction/Receipt/
+  Contract listing pickers, Dashboard's active-listings stat) now make one `/api/assets` fetch.
 
 - **Price History** — Shared `PriceHistory` collection (`listingId`/`listingType` discriminator, no
   ref/populate), one entry per creation and per price change on update. `PriceHistoryService.record()` is
-  best-effort. `GET /api/properties|lands/[id]/price-history`, read-only. Recorded for both Property and
-  Land from day one; only the Property View Page displays it so far.
+  best-effort. `GET /api/assets/[id]/price-history`, read-only (resolves the asset's own `isLand` first
+  to know which `listingType` to look up). Recorded for both property and land assets from day one; only
+  the Asset View Page displays it so far.
 
 - **Settings pool entities (15 total)** — flat name + unique `slug` + soft-delete (`deletedAt`) lookup
   lists, global not per-realtor: EnergyClass, HeatingSystem, PropertyCategory, FloorLevel,
@@ -277,13 +297,14 @@ when asked.
   file. Grid-card UI (`FilesPanel`/`FileItem`, 4 cols max, responsive), real thumbnail for images, MIME
   icon otherwise. Delete on both Notes and Files requires confirmation via the shared `ConfirmModal`.
 
-- **EntityDetailTabs / EntityDetailModal** — a `Tabs` primitive switching Notes/Files (+ Owns/Interest
-  For/Viewings when `entityType === "Client"`). Embedded directly on Realtor/Client/Property view pages;
-  modal-wrapped (`EntityDetailModal`) only on `LandTable` (Land has no view page).
+- **EntityDetailTabs** — a `Tabs` primitive switching Notes/Files (+ Owns/Interest For/Viewings when
+  `entityType === "Client"`). Embedded directly on Realtor/Client/Asset view pages — every entity now has
+  one (Land got its own view page as part of the Property+Land merge, see "Asset management"), so the
+  once-needed `EntityDetailModal` wrapper (for entities with no view page) was removed as dead code.
 
-- **Owns (Client)** — Read-only tab, shown first for Client, listing every Property/Land whose `clientId`
-  points at this client, via a new optional `?clientId=` filter on the existing `/api/properties`/
-  `/api/lands` list endpoints (not a new resource). Links out to the Property view page / Land edit page.
+- **Owns (Client)** — Read-only tab, shown first for Client, listing every Asset whose `clientId`
+  points at this client, via a `?clientId=` filter on `GET /api/assets` (not a new resource). Links out
+  to the Asset view page.
 
 - **Interest For (Client)** — CRUD tab: date/transactionType(sale|rent)/listingType(Property|Land)/
   categoryId(no ref, dynamic target resolved client-side)/price/city/area/remarks/isActive. Nested under
@@ -396,13 +417,13 @@ Footer's live ticking clock (seconds-resolution, no date component) still uses
 
 ## Status
 
-**Fully implemented**: Realtor/User/Property/Land/Client management, LogEntry logging (with actor
-attribution), Auth (login/logout/session/role gating, Logs page), self-service Registration, all 15
-Settings pool entities, Property/Realtor/Client View Pages, Price History, Notes, Files/Attachments (+
-`EntityDetailTabs`/`Modal`), Owns/Interest For/Viewings (Client-only tabs), Transactions, Dashboard (real
+**Fully implemented**: Realtor/User/Asset (merged Property+Land)/Client management, LogEntry logging
+(with actor attribution), Auth (login/logout/session/role gating, Logs page), self-service Registration,
+all 15 Settings pool entities, Asset/Realtor/Client View Pages, Price History, Notes, Files/Attachments
+(+ `EntityDetailTabs`), Owns/Interest For/Viewings (Client-only tabs), Transactions, Dashboard (real
 aggregates), self-service Profile, i18n infra with every feature translated, Messages (Root-only
-Message Form config + public intake API), public property listings API (`GET
-/api/public/properties`) — see `PUBLIC_API.md` for both.
+Message Form config + public intake API), public listings API (`GET /api/public/assets`, covering
+both property and land assets) — see `PUBLIC_API.md` for both.
 
 **Still skeleton-only**: the Property Options Settings tab (placeholder text only, no backing entity).
 

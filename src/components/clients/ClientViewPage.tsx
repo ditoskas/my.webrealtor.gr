@@ -39,7 +39,7 @@ export default function ClientViewPage({ clientId }: ClientViewPageProps) {
 
   useEffect(() => {
     if (!isRoot || !client?.realtorId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- see PropertyDetail's clients effect for why
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- see AssetDetail's clients effect for why
       setRealtor(null);
       return;
     }

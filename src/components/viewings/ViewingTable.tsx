@@ -1,5 +1,5 @@
 import { Pencil, Trash2, FileText } from "lucide-react";
-import type { Attachment, FloorLevel, Land, LandCategory, Property, PropertyCategory, Viewing } from "@/lib/types";
+import type { Asset, Attachment, FloorLevel, LandCategory, PropertyCategory, Viewing } from "@/lib/types";
 import { Card, Button } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
 import { formatDate } from "@/lib/formatDate";
@@ -8,8 +8,7 @@ import sharedStyles from "@/styles/shared.module.scss";
 
 interface ViewingTableProps {
   viewings: Viewing[];
-  propertyListings: Property[];
-  landListings: Land[];
+  listings: Asset[];
   propertyCategories: PropertyCategory[];
   floorLevels: FloorLevel[];
   landCategories: LandCategory[];
@@ -20,8 +19,7 @@ interface ViewingTableProps {
 
 export default function ViewingTable({
   viewings,
-  propertyListings,
-  landListings,
+  listings,
   propertyCategories,
   floorLevels,
   landCategories,
@@ -32,11 +30,8 @@ export default function ViewingTable({
   const t = useTranslation();
 
   const listingName = (viewing: Viewing) => {
-    const list = viewing.listingType === "Property" ? propertyListings : landListings;
-    const listing = list.find((item) => item.id === viewing.listingId);
-    return listing
-      ? listingLabel(listing, viewing.listingType, propertyCategories, floorLevels, landCategories)
-      : "—";
+    const listing = listings.find((item) => item.id === viewing.listingId);
+    return listing ? listingLabel(listing, propertyCategories, floorLevels, landCategories) : "—";
   };
 
   const signatureDocument = (viewing: Viewing) =>

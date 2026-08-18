@@ -6,15 +6,14 @@ import apiClient from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { MessageHandler } from "@/helpers/messageHandler";
 import { useAppDispatch, useTranslation } from "@/store/hooks";
-import type { Attachment, FloorLevel, Land, LandCategory, Property, PropertyCategory, Viewing } from "@/lib/types";
+import type { Asset, Attachment, FloorLevel, LandCategory, PropertyCategory, Viewing } from "@/lib/types";
 import ViewingForm, { type ViewingFormValues } from "./ViewingForm";
 
 interface EditViewingModalProps {
   isOpen: boolean;
   clientId: string;
   viewing: Viewing | null;
-  propertyListings: Property[];
-  landListings: Land[];
+  listings: Asset[];
   propertyCategories: PropertyCategory[];
   floorLevels: FloorLevel[];
   landCategories: LandCategory[];
@@ -28,8 +27,7 @@ export default function EditViewingModal({
   isOpen,
   clientId,
   viewing,
-  propertyListings,
-  landListings,
+  listings,
   propertyCategories,
   floorLevels,
   landCategories,
@@ -67,8 +65,7 @@ export default function EditViewingModal({
         key={viewing.id}
         initialValues={viewing}
         clientId={clientId}
-        propertyListings={propertyListings}
-        landListings={landListings}
+        listings={listings}
         propertyCategories={propertyCategories}
         floorLevels={floorLevels}
         landCategories={landCategories}

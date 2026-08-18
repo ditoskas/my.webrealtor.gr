@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
 import { useCurrentUser, useLocale, useTranslation } from "@/store/hooks";
-import type { ApiResponse, Client, Land, Property, Transaction } from "@/lib/types";
+import type { ApiResponse, Asset, Client, Transaction } from "@/lib/types";
 import MonthlyBarChart from "./MonthlyBarChart";
 import styles from "./DashboardPage.module.scss";
 
@@ -36,21 +36,17 @@ export default function DashboardPage() {
     try {
       const scoped = !isRoot;
       const clientsUrl = scoped ? `/api/clients?realtorId=${user.realtorId}` : "/api/clients";
-      const propertiesUrl = scoped ? `/api/properties?realtorId=${user.realtorId}` : "/api/properties";
-      const landsUrl = scoped ? `/api/lands?realtorId=${user.realtorId}` : "/api/lands";
+      const assetsUrl = scoped ? `/api/assets?realtorId=${user.realtorId}` : "/api/assets";
       const transactionsUrl = scoped ? `/api/transactions?realtorId=${user.realtorId}` : "/api/transactions";
 
-      const [clientsRes, propertiesRes, landsRes, transactionsRes] = await Promise.all([
+      const [clientsRes, assetsRes, transactionsRes] = await Promise.all([
         apiClient.get<ApiResponse<Client[]>>(clientsUrl),
-        apiClient.get<ApiResponse<Property[]>>(propertiesUrl),
-        apiClient.get<ApiResponse<Land[]>>(landsUrl),
+        apiClient.get<ApiResponse<Asset[]>>(assetsUrl),
         apiClient.get<ApiResponse<Transaction[]>>(transactionsUrl),
       ]);
 
       setClientsCount(clientsRes.data.data.length);
-      const activeProperties = propertiesRes.data.data.filter((property) => property.status === "active").length;
-      const activeLands = landsRes.data.data.filter((land) => land.status === "active").length;
-      setActiveListingsCount(activeProperties + activeLands);
+      setActiveListingsCount(assetsRes.data.data.filter((asset) => asset.status === "active").length);
       setTransactions(transactionsRes.data.data);
       setError(null);
     } catch {

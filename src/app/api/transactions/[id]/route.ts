@@ -3,15 +3,10 @@ import mongoose from "mongoose";
 import { TransactionService } from "@/services/TransactionService";
 import { RealtorService } from "@/services/RealtorService";
 import { ClientService } from "@/services/ClientService";
-import { PropertyService } from "@/services/PropertyService";
-import { LandService } from "@/services/LandService";
+import { AssetService } from "@/services/AssetService";
 import { LogEntryService } from "@/services/LogEntryService";
 import { getCurrentUserId } from "@/lib/auth";
 import { INTEREST_FOR_LISTING_TYPES, TRANSACTION_ACTIONS } from "@/lib/types";
-
-function resolveListing(listingType: string, listingId: string) {
-  return listingType === "Property" ? PropertyService.get(listingId) : LandService.get(listingId);
-}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -68,7 +63,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       if (!client) return NextResponse.json({ message: "Client not found" }, { status: 400 });
     }
 
-    const listing = await resolveListing(listingType, listingId);
+    const listing = await AssetService.get(listingId);
     if (!listing) return NextResponse.json({ message: "Listing not found" }, { status: 400 });
 
     const client = await ClientService.get(clientId);

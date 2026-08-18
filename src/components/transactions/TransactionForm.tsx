@@ -8,11 +8,10 @@ import { listingLabel } from "@/lib/listingLabel";
 import { useCurrentUser, useTranslation } from "@/store/hooks";
 import {
   type ApiResponse,
+  type Asset,
   type Client,
   type FloorLevel,
-  type Land,
   type LandCategory,
-  type Property,
   type PropertyCategory,
   type Realtor,
   type TransactionInput,
@@ -89,8 +88,7 @@ export default function TransactionForm({
 
   const [realtors, setRealtors] = useState<Realtor[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [propertyListings, setPropertyListings] = useState<Property[]>([]);
-  const [landListings, setLandListings] = useState<Land[]>([]);
+  const [listings, setListings] = useState<Asset[]>([]);
   const [propertyCategories, setPropertyCategories] = useState<PropertyCategory[]>([]);
   const [floorLevels, setFloorLevels] = useState<FloorLevel[]>([]);
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
@@ -142,10 +140,9 @@ export default function TransactionForm({
   // used to resolve the read-only client display's name.
   useEffect(() => {
     if (!values.realtorId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing dependent lists when realtorId is unset, mirrors PropertyDetail's own client-list effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing dependent lists when realtorId is unset, mirrors AssetDetail's own client-list effect
       setClients([]);
-      setPropertyListings([]);
-      setLandListings([]);
+      setListings([]);
       return;
     }
     apiClient
@@ -153,13 +150,9 @@ export default function TransactionForm({
       .then((response) => setClients(response.data.data))
       .catch(() => setClients([]));
     apiClient
-      .get<ApiResponse<Property[]>>(`/api/properties?realtorId=${values.realtorId}`)
-      .then((response) => setPropertyListings(response.data.data))
-      .catch(() => setPropertyListings([]));
-    apiClient
-      .get<ApiResponse<Land[]>>(`/api/lands?realtorId=${values.realtorId}`)
-      .then((response) => setLandListings(response.data.data))
-      .catch(() => setLandListings([]));
+      .get<ApiResponse<Asset[]>>(`/api/assets?realtorId=${values.realtorId}`)
+      .then((response) => setListings(response.data.data))
+      .catch(() => setListings([]));
   }, [values.realtorId]);
 
   // Clears clientId/listingId (and the price/commission auto-filled from that listing) only on a
@@ -175,26 +168,18 @@ export default function TransactionForm({
     setValues((prev) => ({ ...prev, clientId: "", listingId: "", price: 0, buyerCommission: 0, sellerCommission: 0 }));
   }, [values.realtorId]);
 
-  // One merged Property+Land list — the separate "Type" picker was removed (see CLAUDE.md →
+  // One merged Property+Land Asset list — the separate "Type" picker was removed (see CLAUDE.md →
   // "Transactions"): picking a listing here determines listingType implicitly, tagged onto each
   // option's label so Property and Land entries stay distinguishable in one combobox. Only
   // active/pending listings are offered — an inactive listing isn't a deal in progress, so it's
-  // excluded from the picker (not from propertyListings/landListings themselves, which
-  // handleListingSelect still searches in full for edit-mode's already-saved listingId).
-  const listingOptions = [
-    ...propertyListings
-      .filter((listing) => listing.status === "active" || listing.status === "pending")
-      .map((listing) => ({
-        value: listing.id,
-        label: `${listingLabel(listing, "Property", propertyCategories, floorLevels, landCategories)} (${t("transactions.listingType.Property")})`,
-      })),
-    ...landListings
-      .filter((listing) => listing.status === "active" || listing.status === "pending")
-      .map((listing) => ({
-        value: listing.id,
-        label: `${listingLabel(listing, "Land", propertyCategories, floorLevels, landCategories)} (${t("transactions.listingType.Land")})`,
-      })),
-  ];
+  // excluded from the picker (not from `listings` itself, which handleListingSelect still searches
+  // in full for edit-mode's already-saved listingId).
+  const listingOptions = listings
+    .filter((listing) => listing.status === "active" || listing.status === "pending")
+    .map((listing) => ({
+      value: listing.id,
+      label: `${listingLabel(listing, propertyCategories, floorLevels, landCategories)} (${t(`transactions.listingType.${listing.isLand ? "Land" : "Property"}`)})`,
+    }));
 
   const selectedClient = values.clientId ? clients.find((client) => client.id === values.clientId) : undefined;
 
@@ -208,9 +193,8 @@ export default function TransactionForm({
   // commission from it (price × rate) — a listing with no matching rate leaves commission as-is
   // for manual entry.
   const handleListingSelect = (listingId: string) => {
-    const propertyMatch = propertyListings.find((listing) => listing.id === listingId);
-    const listing = propertyMatch ?? landListings.find((option) => option.id === listingId);
-    const listingType: TransactionFormValues["listingType"] = propertyMatch ? "Property" : "Land";
+    const listing = listings.find((option) => option.id === listingId);
+    const listingType: TransactionFormValues["listingType"] = listing?.isLand ? "Land" : "Property";
     setValues((prev) => {
       if (!listing) return { ...prev, listingId };
       const action: TransactionFormValues["action"] = listing.transactionType === "rent" ? "rent" : "buy";

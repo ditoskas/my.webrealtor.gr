@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { NoteService } from "@/services/NoteService";
 import { ClientService } from "@/services/ClientService";
-import { PropertyService } from "@/services/PropertyService";
-import { LandService } from "@/services/LandService";
+import { AssetService } from "@/services/AssetService";
 import { LogEntryService } from "@/services/LogEntryService";
 import { getCurrentUserId } from "@/lib/auth";
 import { NOTE_IMPORTANCE_LEVELS, type NoteEntityType } from "@/lib/types";
@@ -17,13 +16,10 @@ async function resolveRealtorId(entityType: NoteEntityType, entityId: string): P
       const client = await ClientService.get(entityId);
       return client ? client.realtorId.toString() : null;
     }
-    case "Property": {
-      const property = await PropertyService.get(entityId);
-      return property ? property.realtorId.toString() : null;
-    }
+    case "Property":
     case "Land": {
-      const land = await LandService.get(entityId);
-      return land ? land.realtorId.toString() : null;
+      const asset = await AssetService.get(entityId);
+      return asset ? asset.realtorId.toString() : null;
     }
   }
 }

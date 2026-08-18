@@ -39,7 +39,7 @@ export default function RealtorViewPage({ realtorId }: RealtorViewPageProps) {
 
   useEffect(() => {
     if (!realtor?.userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- see PropertyDetail's clients effect for why
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- see AssetDetail's clients effect for why
       setAccountUser(null);
       return;
     }

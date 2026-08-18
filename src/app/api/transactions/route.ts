@@ -3,8 +3,7 @@ import mongoose from "mongoose";
 import { TransactionService } from "@/services/TransactionService";
 import { RealtorService } from "@/services/RealtorService";
 import { ClientService } from "@/services/ClientService";
-import { PropertyService } from "@/services/PropertyService";
-import { LandService } from "@/services/LandService";
+import { AssetService } from "@/services/AssetService";
 import { LogEntryService } from "@/services/LogEntryService";
 import { getCurrentUserId } from "@/lib/auth";
 import { INTEREST_FOR_LISTING_TYPES, TRANSACTION_ACTIONS } from "@/lib/types";
@@ -13,10 +12,6 @@ import { INTEREST_FOR_LISTING_TYPES, TRANSACTION_ACTIONS } from "@/lib/types";
 // ?realtorId= scoping convention as /api/clients (see that route for the reasoning): the frontend
 // decides whether to pass it (Administrator/Operator, per CLAUDE.md → "Data scoping by realtor")
 // or omit it (Root, sees every realtor's).
-
-function resolveListing(listingType: string, listingId: string) {
-  return listingType === "Property" ? PropertyService.get(listingId) : LandService.get(listingId);
-}
 
 export async function GET(request: Request) {
   try {
@@ -66,7 +61,7 @@ export async function POST(request: Request) {
     const client = await ClientService.get(clientId);
     if (!client) return NextResponse.json({ message: "Client not found" }, { status: 400 });
 
-    const listing = await resolveListing(listingType, listingId);
+    const listing = await AssetService.get(listingId);
     if (!listing) return NextResponse.json({ message: "Listing not found" }, { status: 400 });
 
     const data = await TransactionService.create({
@@ -86,11 +81,7 @@ export async function POST(request: Request) {
     // Mark the listing inactive — the deal is done, so the listing is no longer available.
     // Best-effort: a status-update failure must never prevent the transaction from being recorded.
     try {
-      if (listingType === "Property") {
-        await PropertyService.update(listingId, { status: "inactive" });
-      } else {
-        await LandService.update(listingId, { status: "inactive" });
-      }
+      await AssetService.update(listingId, { status: "inactive" });
     } catch (err) {
       console.error("POST /api/transactions: failed to set listing inactive", err);
     }

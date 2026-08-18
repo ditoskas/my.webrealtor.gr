@@ -5,8 +5,7 @@ import { NextResponse } from "next/server";
 import { AttachmentService } from "@/services/AttachmentService";
 import { RealtorService } from "@/services/RealtorService";
 import { ClientService } from "@/services/ClientService";
-import { PropertyService } from "@/services/PropertyService";
-import { LandService } from "@/services/LandService";
+import { AssetService } from "@/services/AssetService";
 import { LogEntryService } from "@/services/LogEntryService";
 import { getCurrentUserId } from "@/lib/auth";
 import {
@@ -36,13 +35,10 @@ async function resolveParent(
       const client = await ClientService.get(entityId);
       return { found: !!client, realtorId: client ? client.realtorId.toString() : null };
     }
-    case "Property": {
-      const property = await PropertyService.get(entityId);
-      return { found: !!property, realtorId: property ? property.realtorId.toString() : null };
-    }
+    case "Property":
     case "Land": {
-      const land = await LandService.get(entityId);
-      return { found: !!land, realtorId: land ? land.realtorId.toString() : null };
+      const asset = await AssetService.get(entityId);
+      return { found: !!asset, realtorId: asset ? asset.realtorId.toString() : null };
     }
   }
 }

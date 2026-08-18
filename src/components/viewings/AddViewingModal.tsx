@@ -6,14 +6,13 @@ import apiClient from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { MessageHandler } from "@/helpers/messageHandler";
 import { useAppDispatch, useTranslation } from "@/store/hooks";
-import type { Attachment, FloorLevel, Land, LandCategory, Property, PropertyCategory } from "@/lib/types";
+import type { Asset, Attachment, FloorLevel, LandCategory, PropertyCategory } from "@/lib/types";
 import ViewingForm, { type ViewingFormValues } from "./ViewingForm";
 
 interface AddViewingModalProps {
   isOpen: boolean;
   clientId: string;
-  propertyListings: Property[];
-  landListings: Land[];
+  listings: Asset[];
   propertyCategories: PropertyCategory[];
   floorLevels: FloorLevel[];
   landCategories: LandCategory[];
@@ -26,8 +25,7 @@ interface AddViewingModalProps {
 export default function AddViewingModal({
   isOpen,
   clientId,
-  propertyListings,
-  landListings,
+  listings,
   propertyCategories,
   floorLevels,
   landCategories,
@@ -63,8 +61,7 @@ export default function AddViewingModal({
       <ViewingForm
         key="new"
         clientId={clientId}
-        propertyListings={propertyListings}
-        landListings={landListings}
+        listings={listings}
         propertyCategories={propertyCategories}
         floorLevels={floorLevels}
         landCategories={landCategories}

@@ -14,8 +14,7 @@ import type {
   ApiResponse,
   Transaction,
   Client,
-  Property,
-  Land,
+  Asset,
   PropertyCategory,
   FloorLevel,
   LandCategory,
@@ -91,7 +90,7 @@ const EMPTY: FormValues = {
 // transaction's clientId — that's the deal's counterparty (the tenant here), a different person.
 function buildValuesFromTransaction(
   tx: Transaction,
-  listing: Property | Land | undefined,
+  listing: Asset | undefined,
   ownerClient: Client | undefined,
   renterClient: Client | undefined
 ): FormValues {
@@ -258,6 +257,8 @@ export default function ContractPage() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const searchParams = useSearchParams();
+  // Still named propertyId in the URL for backwards compatibility — resolves against the merged
+  // Asset list (see CLAUDE.md → "Asset management"), so it works for land rows too.
   const propertyId = searchParams.get("propertyId");
   // Arrived from TransactionTable's "Generate Contract" action (shown only while that transaction
   // has no contract yet) — preselects that exact transaction directly, no fuzzy match needed since
@@ -268,8 +269,7 @@ export default function ContractPage() {
   const [values, setValues] = useState<FormValues>(EMPTY);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [propertyListings, setPropertyListings] = useState<Property[]>([]);
-  const [landListings, setLandListings] = useState<Land[]>([]);
+  const [listings, setListings] = useState<Asset[]>([]);
   const [propertyCategories, setPropertyCategories] = useState<PropertyCategory[]>([]);
   const [floorLevels, setFloorLevels] = useState<FloorLevel[]>([]);
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
@@ -289,12 +289,11 @@ export default function ContractPage() {
         const realtorId = user!.realtorId;
         const qs = isRoot ? "" : `?realtorId=${realtorId}`;
 
-        const [txRes, clientRes, propertiesRes, landsRes, propertyCategoriesRes, floorLevelsRes, landCategoriesRes] =
+        const [txRes, clientRes, assetsRes, propertyCategoriesRes, floorLevelsRes, landCategoriesRes] =
           await Promise.all([
             apiClient.get(`/api/transactions${qs}`),
             apiClient.get(`/api/clients${qs}`),
-            apiClient.get<ApiResponse<Property[]>>(`/api/properties${qs}`),
-            apiClient.get<ApiResponse<Land[]>>(`/api/lands${qs}`),
+            apiClient.get<ApiResponse<Asset[]>>(`/api/assets${qs}`),
             apiClient.get<ApiResponse<PropertyCategory[]>>("/api/property-categories"),
             apiClient.get<ApiResponse<FloorLevel[]>>("/api/floor-levels"),
             apiClient.get<ApiResponse<LandCategory[]>>("/api/land-categories"),
@@ -307,20 +306,15 @@ export default function ContractPage() {
         // link from TransactionTable still resolves correctly.
         const availableTxList = txList.filter((tx) => !tx.contractUrl);
         const clientList: Client[] = clientRes.data.data ?? [];
-        const propertyList: Property[] = propertiesRes.data.data ?? [];
-        const landList: Land[] = landsRes.data.data ?? [];
+        const assetList: Asset[] = assetsRes.data.data ?? [];
         setTransactions(availableTxList);
         setClients(clientList);
-        setPropertyListings(propertyList);
-        setLandListings(landList);
+        setListings(assetList);
         setPropertyCategories(propertyCategoriesRes.data.data ?? []);
         setFloorLevels(floorLevelsRes.data.data ?? []);
         setLandCategories(landCategoriesRes.data.data ?? []);
 
-        const resolveListing = (tx: Transaction) =>
-          tx.listingType === "Property"
-            ? propertyList.find((p) => p.id === tx.listingId)
-            : landList.find((l) => l.id === tx.listingId);
+        const resolveListing = (tx: Transaction) => assetList.find((asset) => asset.id === tx.listingId);
 
         const preselect = (match: Transaction) => {
           const listing = resolveListing(match);
@@ -340,9 +334,7 @@ export default function ContractPage() {
         } else if (propertyId) {
           // Same "most recent transaction for this listing" fuzzy match as ReceiptPage — see its
           // own comment for why this is sorted client-side rather than trusting list order.
-          const propertyTxs = availableTxList.filter(
-            (tx) => tx.listingType === "Property" && tx.listingId === propertyId
-          );
+          const propertyTxs = availableTxList.filter((tx) => tx.listingId === propertyId);
           const match = propertyTxs.reduce<Transaction | undefined>(
             (latest, tx) => (!latest || new Date(tx.date) > new Date(latest.date) ? tx : latest),
             undefined
@@ -382,10 +374,7 @@ export default function ContractPage() {
     const tx = transactions.find((t) => t.id === txId);
     if (!tx) return;
 
-    const listing =
-      tx.listingType === "Property"
-        ? propertyListings.find((p) => p.id === tx.listingId)
-        : landListings.find((l) => l.id === tx.listingId);
+    const listing = listings.find((asset) => asset.id === tx.listingId);
     const ownerClient = listing?.clientId ? clients.find((c) => c.id === listing.clientId) : undefined;
     const renterClient = clients.find((c) => c.id === tx.clientId);
     setValues(buildValuesFromTransaction(tx, listing, ownerClient, renterClient));
@@ -433,7 +422,7 @@ export default function ContractPage() {
 
   const transactionOptions = transactions.map((tx) => ({
     value: tx.id,
-    label: transactionOptionLabel(tx, propertyListings, landListings, propertyCategories, floorLevels, landCategories, t),
+    label: transactionOptionLabel(tx, listings, propertyCategories, floorLevels, landCategories, t),
   }));
 
   return (

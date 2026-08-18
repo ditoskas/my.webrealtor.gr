@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { ClientService } from "@/services/ClientService";
 import { ViewingService } from "@/services/ViewingService";
-import { PropertyService } from "@/services/PropertyService";
-import { LandService } from "@/services/LandService";
+import { AssetService } from "@/services/AssetService";
 import { AttachmentService } from "@/services/AttachmentService";
 import { LogEntryService } from "@/services/LogEntryService";
 import { getCurrentUserId } from "@/lib/auth";
@@ -12,10 +11,6 @@ import { INTEREST_FOR_LISTING_TYPES } from "@/lib/types";
 // TODO: gate with real role checks once route-level auth middleware lands — see CLAUDE.md.
 // Nested under /api/clients/[id]/viewings since Viewing always belongs to exactly one Client, same
 // per-parent nesting InterestFor uses under /api/clients/[id]/interest-for.
-
-function resolveListing(listingType: string, listingId: string) {
-  return listingType === "Property" ? PropertyService.get(listingId) : LandService.get(listingId);
-}
 
 // signatureDocumentId, when provided, must reference an Attachment already uploaded to this same
 // Client via the Files flow (POST /api/attachments) — not an arbitrary/other-entity attachment id.
@@ -60,7 +55,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!listingType) return NextResponse.json({ message: "Type is required" }, { status: 400 });
     if (!listingId) return NextResponse.json({ message: "Property or Land is required" }, { status: 400 });
 
-    const listing = await resolveListing(listingType, listingId);
+    const listing = await AssetService.get(listingId);
     if (!listing) return NextResponse.json({ message: "Listing not found" }, { status: 400 });
 
     if (signatureDocumentId && !(await resolveSignatureDocument(id, signatureDocumentId))) {

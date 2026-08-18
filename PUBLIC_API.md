@@ -134,11 +134,18 @@ email). The submission is durably stored either way.
 
 ---
 
-## `GET /api/public/properties`
+## `GET /api/public/assets`
 
-Returns a realtor's own **active or pending** property listings (never `inactive` ones — that
-status isn't exposed publicly, and isn't one of the filters below). Meant for a realtor's own
-website to pull its own listings and render them, e.g. as a "current listings" page.
+Returns a realtor's own **active or pending** listings — both properties and land assets (see
+CLAUDE.md → "Asset management"; never `inactive` ones — that status isn't exposed publicly, and
+isn't one of the filters below). Meant for a realtor's own website to pull its own listings and
+render them, e.g. as a "current listings" page.
+
+> **Renamed from `/api/public/properties`:** this endpoint used to live at
+> `GET /api/public/properties` and return only properties. Renamed to `/api/public/assets` and
+> broadened to return land assets too — done before this app had any real external integrations,
+> so the old path is gone rather than kept as an alias. Every payload item now carries a new
+> `isLand: boolean` field; pass `kind=property` (see below) to get only property-shaped results.
 
 Unauthenticated by design, same as `POST /api/public/message` — but note this endpoint is keyed
 by a **different guid**: a `Realtor.guid` (one per realtor, identifies *all* of that realtor's
@@ -160,36 +167,42 @@ the headers above.
 
 ### Request
 
-`GET /api/public/properties?guid=...&type=...&action=...&minPrice=...&maxPrice=...`
+`GET /api/public/assets?guid=...&kind=...&type=...&landType=...&action=...&minPrice=...&maxPrice=...`
 
 All filters are optional query string parameters and can be combined.
 
 | Param      | Type   | Required | Notes                                                                 |
 |------------|--------|----------|-------------------------------------------------------------------------|
 | `guid`     | string | yes      | The realtor's own guid (see above) — identifies whose listings to return. |
-| `type`     | string | no       | A Property Category **slug** (Settings → Property Category, e.g. `diamerisma`). Unknown slug → `400`. |
-| `action`   | string | no       | `sale` or `rent` — matches `Property.transactionType`. Any other value → `400`. |
+| `kind`     | string | no       | `property` or `land` — restricts results to just that kind. Omitted → both. Any other value → `400`. |
+| `type`     | string | no       | A Property Category **slug** (Settings → Property Category, e.g. `diamerisma`) — only ever matches property results. Unknown slug → `400`. |
+| `landType` | string | no       | A Land Category **slug** (Settings → Land Category) — only ever matches land results. Unknown slug → `400`. |
+| `action`   | string | no       | `sale` or `rent` — matches `transactionType`, applies to both kinds. Any other value → `400`. |
 | `minPrice` | number | no       | Inclusive lower bound on `price`. Negative/non-numeric → `400`.          |
 | `maxPrice` | number | no       | Inclusive upper bound on `price`. Negative/non-numeric, or below `minPrice` → `400`. |
 
 ### Response
 
-Follows the [response envelope](#response-envelope) above; `payload` is an array of property
-objects (empty array, not an error, when nothing matches). Each object is the property's full
-`toJSON()` shape (see `models/Property.ts` — same ~90 fields the internal app works with:
-description, area, rooms, energy/construction/technical flags, location, `images`, etc.) with two
-changes for the public contract:
-- `clientId` and `realtorId` are stripped (internal refs — the client is the property's private
+Follows the [response envelope](#response-envelope) above; `payload` is an array of listing
+objects (empty array, not an error, when nothing matches). Each object is the asset's full
+`toJSON()` shape (see `models/Asset.ts` — the merged property/land field set: description, area,
+rooms, energy/construction/technical flags, location, `images`, etc., with land-only or
+property-only fields simply absent/null depending on kind) with these changes for the public
+contract:
+- `isLand: boolean` — the kind discriminator; `true` for a land asset, `false` for a property.
+- `clientId` and `realtorId` are stripped (internal refs — the client is the listing's private
   owner record, and the realtor is already implied by `guid`).
-- `propertyCategoryId` is replaced by a populated `propertyCategory: { id, name, slug }` object
-  (or `null`), since a bare ObjectId is meaningless to a caller with no access to the internal
-  Settings API. Every other `*Id` ref (`energyClassId`, `heatingSystemId`, etc.) is still a raw
+- For a property (`isLand: false`): `propertyCategoryId` is replaced by a populated
+  `propertyCategory: { id, name, slug }` object (or `null`); no `landCategory` key is present.
+- For a land asset (`isLand: true`): `landCategoryId` is replaced by a populated
+  `landCategory: { id, name, slug }` object (or `null`); no `propertyCategory` key is present.
+- Every other `*Id` ref (`energyClassId`, `heatingSystemId`, `slopeId`, etc.) is still a raw
   ObjectId — not populated, out of scope for this endpoint today.
 
 | Status | Body                                                                        | Meaning                                    |
 |--------|-------------------------------------------------------------------------------|----------------------------------------------|
 | 200    | `{ "success": true, "payload": [ { ... }, ... ], "message": "" }`             | Query executed (possibly zero results).      |
-| 400    | `{ "success": false, "payload": null, "message": "Invalid request" }`         | Missing `guid`, or an invalid `type`/`action`/`minPrice`/`maxPrice`. |
+| 400    | `{ "success": false, "payload": null, "message": "Invalid request" }`         | Missing `guid`, or an invalid `kind`/`type`/`landType`/`action`/`minPrice`/`maxPrice`. |
 | 404    | `{ "success": false, "payload": null, "message": "Not found" }`               | `guid` doesn't match any realtor.             |
 | 500    | `{ "success": false, "payload": null, "message": "Internal server error" }`   | Unexpected failure.                           |
 
@@ -197,9 +210,10 @@ changes for the public contract:
 
 ```js
 const response = await fetch(
-  "https://my.webrealtor.gr/api/public/properties?" +
+  "https://my.webrealtor.gr/api/public/assets?" +
     new URLSearchParams({
       guid: "9c6f2b1a-9e2d-4b2b-8a3e-1f2c3d4e5f6a",
+      kind: "property",
       type: "diamerisma",
       action: "sale",
       minPrice: "100000",
@@ -208,6 +222,65 @@ const response = await fetch(
 );
 const { success, payload } = await response.json();
 if (success) {
-  payload.forEach((property) => console.log(property.title, property.price));
+  payload.forEach((listing) => console.log(listing.isLand, listing.title, listing.price));
+}
+```
+
+---
+
+## `GET /api/public/assets/{id}`
+
+Detail counterpart to `GET /api/public/assets` above — returns a single listing (property or
+land asset, see the list endpoint's contract note) instead of a filtered collection. Same guid (a
+`Realtor.guid`, not a `MessageForm.guid`) and same active/pending-only scoping: a listing that's
+`inactive`, or that belongs to a different realtor than the one `guid` identifies, is treated
+identically to a nonexistent `id` — both return `404`, so the endpoint never confirms or denies a
+listing's existence outside the caller's own guid.
+
+### CORS
+
+Cross-origin requests are allowed from any origin:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+```
+Browsers will send a preflight `OPTIONS` request first; this endpoint answers it with `204` and
+the headers above.
+
+### Request
+
+`GET /api/public/assets/{id}?guid=...`
+
+| Param  | Type   | Required | Notes                                                                    |
+|--------|--------|----------|---------------------------------------------------------------------------|
+| `id`   | string | yes      | Path segment — the listing's `id`. Not a 24-char hex ObjectId → `400`.    |
+| `guid` | string | yes      | The realtor's own guid (see the list endpoint above).                     |
+
+### Response
+
+Follows the [response envelope](#response-envelope) above; `payload` is a single listing object on
+success — same shape as one entry of the list endpoint's `payload` array (full `toJSON()` shape
+with `clientId`/`realtorId` stripped, `isLand` present, and `propertyCategoryId`/`landCategoryId`
+replaced by a populated `propertyCategory`/`landCategory` object depending on `isLand` — see the
+list endpoint's Response section for the exact rule).
+
+| Status | Body                                                                         | Meaning                                                                                            |
+|--------|---------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| 200    | `{ "success": true, "payload": { ... }, "message": "" }`                        | Listing found, belongs to this guid's realtor, active/pending.                                         |
+| 400    | `{ "success": false, "payload": null, "message": "Invalid request" }`           | Missing `guid`, or `id` isn't a valid ObjectId shape.                                                   |
+| 404    | `{ "success": false, "payload": null, "message": "Not found" }`                 | `guid` doesn't match any realtor, or `id` doesn't resolve to an active/pending listing owned by that realtor. |
+| 500    | `{ "success": false, "payload": null, "message": "Internal server error" }`     | Unexpected failure.                                                                                     |
+
+### Example
+
+```js
+const response = await fetch(
+  "https://my.webrealtor.gr/api/public/assets/64f1a2b3c4d5e6f7a8b9c0d1?" +
+    new URLSearchParams({ guid: "9c6f2b1a-9e2d-4b2b-8a3e-1f2c3d4e5f6a" })
+);
+const { success, payload } = await response.json();
+if (success) {
+  console.log(payload.isLand, payload.title, payload.price);
 }
 ```

@@ -15,8 +15,7 @@ import type {
   Transaction,
   Client,
   Realtor,
-  Property,
-  Land,
+  Asset,
   PropertyCategory,
   FloorLevel,
   LandCategory,
@@ -127,6 +126,9 @@ export default function ReceiptPage() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const searchParams = useSearchParams();
+  // Still named propertyId in the URL for backwards compatibility with existing row-action links —
+  // now resolves against the merged Asset list (see CLAUDE.md → "Asset management"), so it works
+  // for a land row's "Create Receipt" action too, not just a property's.
   const propertyId = searchParams.get("propertyId");
   // Arrived from TransactionTable's "Generate Receipt" action (shown only while that transaction
   // has no receipt yet) — preselects that exact transaction directly, no fuzzy match needed since
@@ -136,8 +138,7 @@ export default function ReceiptPage() {
   const [values, setValues] = useState<FormValues>(EMPTY);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [propertyListings, setPropertyListings] = useState<Property[]>([]);
-  const [landListings, setLandListings] = useState<Land[]>([]);
+  const [listings, setListings] = useState<Asset[]>([]);
   const [propertyCategories, setPropertyCategories] = useState<PropertyCategory[]>([]);
   const [floorLevels, setFloorLevels] = useState<FloorLevel[]>([]);
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
@@ -160,12 +161,11 @@ export default function ReceiptPage() {
         const realtorId = user!.realtorId;
         const qs = isRoot ? "" : `?realtorId=${realtorId}`;
 
-        const [txRes, clientRes, propertiesRes, landsRes, propertyCategoriesRes, floorLevelsRes, landCategoriesRes] =
+        const [txRes, clientRes, assetsRes, propertyCategoriesRes, floorLevelsRes, landCategoriesRes] =
           await Promise.all([
             apiClient.get(`/api/transactions${qs}`),
             apiClient.get(`/api/clients${qs}`),
-            apiClient.get<ApiResponse<Property[]>>(`/api/properties${qs}`),
-            apiClient.get<ApiResponse<Land[]>>(`/api/lands${qs}`),
+            apiClient.get<ApiResponse<Asset[]>>(`/api/assets${qs}`),
             apiClient.get<ApiResponse<PropertyCategory[]>>("/api/property-categories"),
             apiClient.get<ApiResponse<FloorLevel[]>>("/api/floor-levels"),
             apiClient.get<ApiResponse<LandCategory[]>>("/api/land-categories"),
@@ -180,8 +180,7 @@ export default function ReceiptPage() {
         const clientList: Client[] = clientRes.data.data ?? [];
         setTransactions(availableTxList);
         setClients(clientList);
-        setPropertyListings(propertiesRes.data.data ?? []);
-        setLandListings(landsRes.data.data ?? []);
+        setListings(assetsRes.data.data ?? []);
         setPropertyCategories(propertyCategoriesRes.data.data ?? []);
         setFloorLevels(floorLevelsRes.data.data ?? []);
         setLandCategories(landCategoriesRes.data.data ?? []);
@@ -217,14 +216,14 @@ export default function ReceiptPage() {
             MessageHandler.warning(dispatch, t("receipt.noMatchingTransaction"));
           }
         } else if (propertyId) {
-          // Arrived from a property row's "Create Receipt" action (see PropertyTable) — preselect
-          // that listing's most recent transaction instead of leaving the dropdown empty. Sorted
-          // client-side by date rather than trusting list order, since Root's unscoped
-          // /api/transactions response is createdAt-sorted (TransactionService.list →
-          // BaseRepository.findAll), not date-sorted like the realtor-scoped listForRealtor() path.
-          const propertyTxs = availableTxList.filter(
-            (tx) => tx.listingType === "Property" && tx.listingId === propertyId
-          );
+          // Arrived from an asset row's "Create Receipt" action (see AssetTable) — preselect that
+          // listing's most recent transaction instead of leaving the dropdown empty. Matches by
+          // listingId alone now that both kinds resolve into the same Asset collection (see
+          // CLAUDE.md → "Asset management"). Sorted client-side by date rather than trusting list
+          // order, since Root's unscoped /api/transactions response is createdAt-sorted
+          // (TransactionService.list → BaseRepository.findAll), not date-sorted like the
+          // realtor-scoped listForRealtor() path.
+          const propertyTxs = availableTxList.filter((tx) => tx.listingId === propertyId);
           const match = propertyTxs.reduce<Transaction | undefined>(
             (latest, tx) => (!latest || new Date(tx.date) > new Date(latest.date) ? tx : latest),
             undefined
@@ -317,7 +316,7 @@ export default function ReceiptPage() {
 
   const transactionOptions = transactions.map((tx) => ({
     value: tx.id,
-    label: transactionOptionLabel(tx, propertyListings, landListings, propertyCategories, floorLevels, landCategories, t),
+    label: transactionOptionLabel(tx, listings, propertyCategories, floorLevels, landCategories, t),
   }));
 
   return (
