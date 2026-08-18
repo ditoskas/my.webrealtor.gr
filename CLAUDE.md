@@ -230,11 +230,29 @@ when asked.
   "Realtor management" — one identifies a realtor's whole listing set, the other one contact form).
   Optional filters: `kind` (`property`/`land`, narrows to just that kind), `type` (a
   PropertyCategory slug, property results only), `landType` (a LandCategory slug, land results
-  only), `action` (`transactionType`: sale|rent), `minPrice`/`maxPrice`.
+  only), `action` (`transactionType`: sale|rent), `minPrice`/`maxPrice`, `tag` (one of the
+  realtor's own Tag names, case-insensitive exact match — see "Tags" below; unknown name → `400`).
   `AssetRepository.findPublicByRealtorId` always restricts to `status: active|pending` — that's
-  fixed, not a caller-controlled filter. Response strips `clientId`/`realtorId` (internal refs) and
-  populates `propertyCategoryId`/`landCategoryId` into a `propertyCategory`/`landCategory`
-  `{ id, name, slug }` object depending on `isLand`; every other `*Id` ref stays a raw ObjectId.
+  fixed, not a caller-controlled filter. Response strips `clientId`/`realtorId`/`tagIds` (internal
+  refs) and populates `propertyCategoryId`/`landCategoryId` into a `propertyCategory`/
+  `landCategory` `{ id, name, slug }` object depending on `isLand`; every other `*Id` ref stays a
+  raw ObjectId. `GET /api/public/assets/{id}` is the single-listing counterpart, same guid/
+  active-pending scoping. A third endpoint, `GET /api/public/similar/{assetId}`, returns up to 3
+  other active/pending listings from the same realtor matching the reference listing's action and
+  (where enough candidates exist) category, closest in price first — see PUBLIC_API.md and
+  `AssetService.findSimilar`/`AssetRepository.findSimilarCandidates` for the exact fallback logic.
+
+- **Tags** — Free-form per-realtor labels (`models/Tag.ts`: `realtorId`+`name`, compound unique
+  index, no slug/soft-delete — hard delete instead), managed by the realtor themselves on their own
+  Profile page (`TagsPanel.tsx`: add/inline-rename/delete via `/api/tags`, `canEdit`-gated). Every
+  realtor gets a default **"Recent"** tag seeded on creation (`RealtorService.create()` and
+  `RegistrationService.completeRegistration()`, both best-effort; existing realtors backfilled once
+  via `scripts/backfill-realtor-tags.ts`, wired into `predev`/`predev:docker`). Assignable to any
+  Asset on the Add/Edit page (`Asset.tagIds`, multi-select chip toggle in `AssetFormFields.tsx`);
+  filterable (OR semantics) on the Assets search bar (`AssetSearchBar.tsx`, hidden for Root — Tags
+  are realtor-scoped and Root has no single `realtorId` to fetch a set by); filterable on the public
+  API via `?tag=` above. Deleting a tag (`TagService.remove`) best-effort pulls its id out of every
+  Asset's `tagIds` via `AssetService.removeTagFromAll`/`AssetRepository.pullTagFromAll`.
 
 - **Client management** — Belongs to a Realtor. Model: gender(nullable, Male|Female only)/firstName/
   lastName/tin/city/address/zipcode/email/phone/mobile/realtorId. `GET /api/clients` takes optional

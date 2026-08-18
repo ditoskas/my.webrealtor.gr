@@ -2,6 +2,9 @@ import { connectDB } from "@/lib/mongodb";
 import { assetRepository, type PublicAssetFilters } from "@/repositories/AssetRepository";
 import type { IAsset } from "@/models/Asset";
 
+// Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md and AssetService.findSimilar below.
+const SIMILAR_ASSET_LIMIT = 3;
+
 // Root sees every realtor's assets via list(); Administrator/Operator are scoped to their own via
 // listForRealtor() — same split as the old PropertyService/LandService this replaces.
 export class AssetService {
@@ -42,6 +45,41 @@ export class AssetService {
   static async getPublicForRealtor(id: string, realtorId: string) {
     await connectDB();
     return assetRepository.findPublicByIdForRealtor(id, realtorId);
+  }
+
+  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Matches on the reference asset's
+  // own realtor, kind (isLand), and action (transactionType); prefers same-category candidates,
+  // falling back to every category once same-category matches run under SIMILAR_ASSET_LIMIT, then
+  // returns whichever set sorted by closeness in price to the reference. Returns null when the
+  // reference asset doesn't exist, isn't this realtor's, or isn't active/pending — same "id alone
+  // is never sufficient" contract as getPublicForRealtor.
+  static async findSimilar(assetId: string, realtorId: string) {
+    await connectDB();
+    const reference = await assetRepository.findActiveByIdForRealtor(assetId, realtorId);
+    if (!reference) return null;
+
+    const categoryId = (reference.isLand ? reference.landCategoryId : reference.propertyCategoryId)?.toString();
+
+    let candidates = await assetRepository.findSimilarCandidates({
+      realtorId,
+      isLand: reference.isLand,
+      transactionType: reference.transactionType,
+      excludeId: reference.id,
+      categoryId,
+    });
+
+    if (candidates.length < SIMILAR_ASSET_LIMIT && categoryId) {
+      candidates = await assetRepository.findSimilarCandidates({
+        realtorId,
+        isLand: reference.isLand,
+        transactionType: reference.transactionType,
+        excludeId: reference.id,
+      });
+    }
+
+    return [...candidates]
+      .sort((a, b) => Math.abs(a.price - reference.price) - Math.abs(b.price - reference.price))
+      .slice(0, SIMILAR_ASSET_LIMIT);
   }
 
   static async get(id: string) {

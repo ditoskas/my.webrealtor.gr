@@ -74,6 +74,42 @@ class AssetRepository extends BaseRepository<IAsset> {
       .populate("landCategoryId", "name slug")
       .exec();
   }
+
+  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Unpopulated: used internally
+  // only, to read the reference asset's own category id before building the candidates query
+  // below — a populated category ref can't be reused directly as a filter value.
+  findActiveByIdForRealtor(id: string, realtorId: string) {
+    return this.model.findOne({ _id: id, realtorId, status: { $in: ["active", "pending"] } }).exec();
+  }
+
+  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Same realtor + active/pending
+  // scoping as findPublicByRealtorId, plus the reference asset's own kind (isLand) and action
+  // (transactionType); category is optional so the caller can drop it and re-query once
+  // same-category candidates run under AssetService.SIMILAR_ASSET_LIMIT.
+  findSimilarCandidates(filters: {
+    realtorId: string;
+    isLand: boolean;
+    transactionType: TransactionType;
+    excludeId: string;
+    categoryId?: string;
+  }) {
+    const query: QueryFilter<IAsset> = {
+      realtorId: filters.realtorId,
+      isLand: filters.isLand,
+      transactionType: filters.transactionType,
+      status: { $in: ["active", "pending"] },
+      _id: { $ne: filters.excludeId },
+    };
+    if (filters.categoryId) {
+      if (filters.isLand) query.landCategoryId = filters.categoryId;
+      else query.propertyCategoryId = filters.categoryId;
+    }
+    return this.model
+      .find(query)
+      .populate("propertyCategoryId", "name slug")
+      .populate("landCategoryId", "name slug")
+      .exec();
+  }
 }
 
 export const assetRepository = new AssetRepository();

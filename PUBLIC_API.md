@@ -284,3 +284,71 @@ if (success) {
   console.log(payload.isLand, payload.title, payload.price);
 }
 ```
+
+---
+
+## `GET /api/public/similar/{assetId}`
+
+Given a reference listing, returns up to **3** other active/pending listings from the same
+realtor that best match it — meant for a "similar listings" widget on a listing's own page.
+
+Matching, in order:
+1. Same realtor as the reference (via `guid`, same rule as every other public endpoint), same kind
+   (`isLand`), and same action (`transactionType`, e.g. both `sale` or both `rent`).
+2. Same category too (`propertyCategory`/`landCategory`, whichever applies to the reference's
+   kind), if the reference has one.
+3. If step 2 finds fewer than 3 candidates, the category restriction is dropped and step 1's wider
+   set is used instead.
+4. Whichever set was used, results are sorted by closeness in `price` to the reference (nearest
+   first) and capped at 3.
+
+Same active/pending-only scoping as the other `/api/public/assets` endpoints: a reference listing
+that's `inactive`, or belongs to a different realtor than the one `guid` identifies, is treated as
+not found — this endpoint never confirms or denies a listing's existence outside the caller's own
+guid. Candidate listings are scoped the same way (never `inactive`).
+
+### CORS
+
+Cross-origin requests are allowed from any origin:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+```
+Browsers will send a preflight `OPTIONS` request first; this endpoint answers it with `204` and
+the headers above.
+
+### Request
+
+`GET /api/public/similar/{assetId}?guid=...`
+
+| Param     | Type   | Required | Notes                                                                 |
+|-----------|--------|----------|-------------------------------------------------------------------------|
+| `assetId` | string | yes      | Path segment — the reference listing's `id`. Not a valid ObjectId → `400`. |
+| `guid`    | string | yes      | The realtor's own guid (see `GET /api/public/assets`).                  |
+
+### Response
+
+Follows the [response envelope](#response-envelope) above; `payload` is an array of 0–3 listing
+objects (never including the reference listing itself), each in the same shape as one entry of
+`GET /api/public/assets`'s `payload` array.
+
+| Status | Body                                                                         | Meaning                                                                                            |
+|--------|---------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| 200    | `{ "success": true, "payload": [ { ... }, ... ], "message": "" }`               | Reference listing found; `payload` holds its matches (possibly empty).                                 |
+| 400    | `{ "success": false, "payload": null, "message": "Invalid request" }`           | Missing `guid`, or `assetId` isn't a valid ObjectId shape.                                              |
+| 404    | `{ "success": false, "payload": null, "message": "Not found" }`                 | `guid` doesn't match any realtor, or `assetId` doesn't resolve to an active/pending listing owned by that realtor. |
+| 500    | `{ "success": false, "payload": null, "message": "Internal server error" }`     | Unexpected failure.                                                                                     |
+
+### Example
+
+```js
+const response = await fetch(
+  "https://my.webrealtor.gr/api/public/similar/64f1a2b3c4d5e6f7a8b9c0d1?" +
+    new URLSearchParams({ guid: "9c6f2b1a-9e2d-4b2b-8a3e-1f2c3d4e5f6a" })
+);
+const { success, payload } = await response.json();
+if (success) {
+  payload.forEach((listing) => console.log(listing.isLand, listing.title, listing.price));
+}
+```

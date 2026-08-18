@@ -296,6 +296,7 @@ const ru: Messages = {
       maxPrice: "Цена до",
       text: "Поиск",
       textPlaceholder: "Поиск по владельцу или расположению...",
+      tags: "Теги",
     },
     status: {
       active: "Активно",
@@ -437,6 +438,8 @@ const ru: Messages = {
       agriculturalUse: "Сельскохозяйственное использование",
 
       descriptionGreek: "Описание (греческий)",
+      tags: "Теги",
+      tagsEmpty: "Тегов пока нет — добавьте их на странице профиля.",
 
       country: "Страна",
       region: "Регион",
@@ -925,6 +928,20 @@ const ru: Messages = {
     displayNamePlaceholder: "Оставьте пустым, чтобы показывать email",
     displayNameSaveError: "Не удалось обновить отображаемое имя",
     displayNameUpdateSuccess: "Отображаемое имя обновлено",
+    tags: {
+      sectionTitle: "Теги",
+      sectionSubtitle: "Управляйте тегами, которые можно назначать вашим объявлениям.",
+      loading: "Загрузка тегов...",
+      loadError: "Не удалось загрузить теги",
+      empty: "Тегов пока нет.",
+      add: "Добавить",
+      addError: "Не удалось добавить тег",
+      saveError: "Не удалось переименовать тег",
+      deleteError: "Не удалось удалить тег",
+      namePlaceholder: "Новый тег",
+      deleteModalTitle: "Удалить тег",
+      deleteConfirm: "Удалить \"{name}\"? Он будет удалён из всех объявлений, где используется.",
+    },
   },
   receipt: {
     pageTitle: "Квитанция об оплате",
