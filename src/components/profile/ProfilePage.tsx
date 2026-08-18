@@ -5,7 +5,7 @@ import { Card } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { MessageHandler } from "@/helpers/messageHandler";
-import { useAppDispatch, useCurrentUser, useTranslation } from "@/store/hooks";
+import { useAppDispatch, useCanEdit, useCurrentUser, useTranslation } from "@/store/hooks";
 import { setUser } from "@/store/authSlice";
 import { setLocale } from "@/store/localeSlice";
 import type { Locale } from "@/lib/i18n/locales";
@@ -15,6 +15,7 @@ import RealtorImageUpload from "@/components/realtors/RealtorImageUpload";
 import ChangePasswordForm, { type ChangePasswordValues } from "./ChangePasswordForm";
 import LanguageForm from "./LanguageForm";
 import DisplayNameForm from "./DisplayNameForm";
+import TagsPanel from "./TagsPanel";
 import sharedStyles from "@/styles/shared.module.scss";
 import styles from "./ProfilePage.module.scss";
 
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const dispatch = useAppDispatch();
   const t = useTranslation();
   const user = useCurrentUser();
+  const canEdit = useCanEdit();
 
   const [realtor, setRealtor] = useState<Realtor | null>(null);
   const [loadingRealtor, setLoadingRealtor] = useState(false);
@@ -176,6 +178,14 @@ export default function ProfilePage() {
             ) : (
               <p className={sharedStyles.errorText}>{realtorError ?? t("profile.realtorLoadError")}</p>
             )}
+          </Card>
+        )}
+
+        {user?.realtorId && (
+          <Card className={styles.card}>
+            <h3 className={styles.cardTitle}>{t("profile.tags.sectionTitle")}</h3>
+            <p className="text-xs text-neutral-400 mb-3">{t("profile.tags.sectionSubtitle")}</p>
+            <TagsPanel realtorId={user.realtorId} canEdit={canEdit} />
           </Card>
         )}
 

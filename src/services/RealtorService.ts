@@ -1,8 +1,20 @@
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { realtorRepository } from "@/repositories/RealtorRepository";
 import { ClientService } from "./ClientService";
 import { AssetService } from "./AssetService";
+import { TagService } from "./TagService";
 import type { IRealtor } from "@/models/Realtor";
+
+// Every new realtor starts with one default tag — see CLAUDE.md → "Tags". Best-effort: a seeding
+// failure must never break realtor creation itself, same discipline as PriceHistoryService.record.
+async function seedDefaultTag(realtorId: string) {
+  try {
+    await TagService.create({ realtorId: new mongoose.Types.ObjectId(realtorId), name: "Recent" });
+  } catch (error) {
+    console.error(`Failed to seed default "Recent" tag for realtor ${realtorId}`, error);
+  }
+}
 
 // Admin manages every realtor; a Realtor-role caller should be scoped to their own
 // record by the route handler (via findByUserId) before reaching here.
@@ -50,7 +62,9 @@ export class RealtorService {
 
   static async create(data: Partial<IRealtor>) {
     await connectDB();
-    return realtorRepository.create(data);
+    const realtor = await realtorRepository.create(data);
+    await seedDefaultTag(realtor.id);
+    return realtor;
   }
 
   static async update(id: string, data: Partial<IRealtor>) {

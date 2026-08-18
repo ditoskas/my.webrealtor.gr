@@ -5,6 +5,7 @@ import { pendingRegistrationRepository } from "@/repositories/PendingRegistratio
 import { userRepository } from "@/repositories/UserRepository";
 import { realtorRepository } from "@/repositories/RealtorRepository";
 import { LogEntryService } from "./LogEntryService";
+import { TagService } from "./TagService";
 import { sendMail } from "@/lib/mail";
 import { registrationConfirmationEmail } from "@/lib/mailTemplates";
 import { signAuthToken, toPublicUser } from "@/lib/auth";
@@ -74,6 +75,15 @@ export class RegistrationService {
     if (existingRealtor) throw new Error("A realtor with this email already exists");
 
     const realtor = await realtorRepository.create({ ...realtorInput, email: realtorEmail });
+
+    // Every new realtor starts with one default tag — see CLAUDE.md → "Tags". Best-effort: a
+    // seeding failure must never break registration itself, same discipline as RealtorService's
+    // own admin-created path.
+    try {
+      await TagService.create({ realtorId: realtor._id, name: "Recent" });
+    } catch (error) {
+      console.error(`Failed to seed default "Recent" tag for realtor ${realtor.id}`, error);
+    }
 
     const user = await userRepository.createWithHashedPassword({
       email: pending.email,

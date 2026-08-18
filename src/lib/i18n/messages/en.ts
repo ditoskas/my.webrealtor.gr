@@ -299,6 +299,7 @@ const en = {
       maxPrice: "Max Price",
       text: "Search",
       textPlaceholder: "Search by owner or location...",
+      tags: "Tags",
     },
     status: {
       active: "Active",
@@ -440,6 +441,9 @@ const en = {
       agriculturalUse: "Agricultural Use",
 
       descriptionGreek: "Description (Greek)",
+
+      tags: "Tags",
+      tagsEmpty: "No tags yet — add some from your Profile page.",
 
       country: "Country",
       region: "Region",
@@ -950,6 +954,20 @@ const en = {
     displayNamePlaceholder: "Leave empty to show your email instead",
     displayNameSaveError: "Failed to update display name",
     displayNameUpdateSuccess: "Display name updated",
+    tags: {
+      sectionTitle: "Tags",
+      sectionSubtitle: "Manage the tags you can assign to your listings.",
+      loading: "Loading tags...",
+      loadError: "Failed to load tags",
+      empty: "No tags yet.",
+      add: "Add",
+      addError: "Failed to add tag",
+      saveError: "Failed to rename tag",
+      deleteError: "Failed to delete tag",
+      namePlaceholder: "New tag name",
+      deleteModalTitle: "Delete Tag",
+      deleteConfirm: "Remove \"{name}\"? It will be unassigned from any listings that have it.",
+    },
   },
   receipt: {
     pageTitle: "Receipt Generator",

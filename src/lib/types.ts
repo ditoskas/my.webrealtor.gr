@@ -271,11 +271,30 @@ export interface Asset {
   // Media
   images: PropertyImage[];
 
+  // The realtor's own tags assigned to this listing — see "Tags" below.
+  tagIds: string[];
+
   createdAt: string;
   updatedAt: string;
 }
 
 export type AssetInput = Omit<Asset, "id" | "createdAt" | "updatedAt">;
+
+// Tags — a realtor's own free-form labels, self-managed from Profile and assignable to that
+// realtor's Assets (see CLAUDE.md → "Tags"). Deliberately per-realtor, not a global Settings pool
+// entity: every realtor keeps an independent tag set, no admin-curated shared list, no slug, no
+// soft-delete — a removed tag is genuinely gone (see TagService.remove()'s cascade cleanup).
+// Every realtor gets a "Recent" tag by default the moment the Realtor record itself is created.
+
+export interface Tag {
+  id: string;
+  realtorId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TagInput = Pick<Tag, "name">;
 
 // Energy classes (Settings lookup list)
 

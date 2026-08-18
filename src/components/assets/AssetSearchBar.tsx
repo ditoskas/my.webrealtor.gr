@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { Card } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
+import type { Tag } from "@/lib/types";
 import sharedStyles from "@/styles/shared.module.scss";
 import styles from "./AssetSearchBar.module.scss";
 
@@ -26,6 +27,11 @@ interface AssetSearchBarProps {
   onMaxPriceChange: (value: string) => void;
   searchText: string;
   onSearchTextChange: (value: string) => void;
+  // The realtor's own Tags (see CLAUDE.md → "Tags") — matches an asset carrying *any* of the
+  // selected tags (OR, not AND), the more common "filter by tags" convention.
+  tags: Tag[];
+  tagFilter: string[];
+  onTagFilterChange: (ids: string[]) => void;
 }
 
 // Merges the old PropertySearchBar + LandSearchBar into one — see CLAUDE.md → "Asset management".
@@ -48,9 +54,16 @@ export default function AssetSearchBar({
   onMaxPriceChange,
   searchText,
   onSearchTextChange,
+  tags,
+  tagFilter,
+  onTagFilterChange,
 }: AssetSearchBarProps) {
   const t = useTranslation();
   const categoryOptions = kindFilter === "land" ? landCategories : propertyCategories;
+
+  const toggleTag = (id: string) => {
+    onTagFilterChange(tagFilter.includes(id) ? tagFilter.filter((tagId) => tagId !== id) : [...tagFilter, id]);
+  };
 
   return (
     <Card className={styles.card}>
@@ -171,6 +184,24 @@ export default function AssetSearchBar({
           </div>
         </div>
       </div>
+
+      {tags.length > 0 && (
+        <div className={styles.tagRow}>
+          <span className={sharedStyles.label}>{t("assets.search.tags")}</span>
+          <div className={styles.tagToggleGrid}>
+            {tags.map((tag) => (
+              <button
+                key={tag.id}
+                type="button"
+                className={`${styles.tagToggle} ${tagFilter.includes(tag.id) ? styles.tagToggleActive : ""}`}
+                onClick={() => toggleTag(tag.id)}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

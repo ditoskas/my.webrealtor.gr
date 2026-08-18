@@ -43,3 +43,38 @@
 .searchInput {
   padding-left: 2.25rem;
 }
+
+// The realtor's own Tags, filterable as a multi-select chip toggle — see AssetSearchBar.tsx.
+.tagRow {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid v.$neutral-100;
+}
+
+.tagToggleGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tagToggle {
+  padding: 0.3125rem 0.75rem;
+  border-radius: 9999px;
+  border: 1.5px solid v.$neutral-200;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: v.$neutral-600;
+
+  &:hover {
+    border-color: v.$brand-300;
+  }
+}
+
+.tagToggleActive {
+  border-color: v.$brand-600;
+  color: v.$brand-700;
+  background: v.$brand-50;
+}

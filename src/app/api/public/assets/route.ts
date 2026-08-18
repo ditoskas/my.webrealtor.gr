@@ -3,6 +3,7 @@ import { RealtorService } from "@/services/RealtorService";
 import { PropertyCategoryService } from "@/services/PropertyCategoryService";
 import { LandCategoryService } from "@/services/LandCategoryService";
 import { AssetService } from "@/services/AssetService";
+import { TagService } from "@/services/TagService";
 import { PublicApiResponse } from "@/lib/publicApiResponse";
 import { TRANSACTION_TYPES, type TransactionType } from "@/lib/types";
 import { serializePublicAsset } from "./serializePublicAsset";
@@ -12,8 +13,10 @@ import { serializePublicAsset } from "./serializePublicAsset";
 // realtor's own website pull their own active/pending listings to render on their own pages —
 // both properties and land assets (see CLAUDE.md → "Asset management"), distinguished by `isLand`
 // on every payload item; `kind`/`landType` narrow the land side the same way `type` already
-// narrows the property side. Named /api/public/assets (renamed from /api/public/properties before
-// this app had any real external consumers to keep backward-compatible — see PUBLIC_API.md).
+// narrows the property side. `tag` narrows by one of the realtor's own Tags (see CLAUDE.md →
+// "Tags") by exact (case-insensitive) name. Named /api/public/assets (renamed from
+// /api/public/properties before this app had any real external consumers to keep
+// backward-compatible — see PUBLIC_API.md).
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -35,6 +38,7 @@ export async function GET(request: Request) {
     const type = searchParams.get("type")?.trim() ?? "";
     const landType = searchParams.get("landType")?.trim() ?? "";
     const kind = searchParams.get("kind")?.trim() ?? "";
+    const tag = searchParams.get("tag")?.trim() ?? "";
     const action = searchParams.get("action")?.trim() ?? "";
     const minPriceRaw = searchParams.get("minPrice");
     const maxPriceRaw = searchParams.get("maxPrice");
@@ -70,6 +74,13 @@ export async function GET(request: Request) {
       landCategoryId = category.id;
     }
 
+    let tagId: string | undefined;
+    if (tag) {
+      const tagRecord = await TagService.findByRealtorIdAndName(realtor.id, tag);
+      if (!tagRecord) return PublicApiResponse.error("Invalid request").toResponse(400, CORS_HEADERS);
+      tagId = tagRecord.id;
+    }
+
     let transactionType: TransactionType | undefined;
     if (action) {
       if (!isTransactionType(action)) {
@@ -102,6 +113,7 @@ export async function GET(request: Request) {
       isLand,
       propertyCategoryId,
       landCategoryId,
+      tagId,
       transactionType,
       minPrice,
       maxPrice,

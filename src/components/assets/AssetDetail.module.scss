@@ -81,3 +81,31 @@
     border-color: v.$neutral-200;
   }
 }
+
+// Multi-select chip toggle for the realtor's own Tags — see AssetFormFields.tsx's TagsField.
+.tagToggleGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tagToggle {
+  padding: 0.3125rem 0.75rem;
+  border-radius: 9999px;
+  border: 1.5px solid v.$neutral-200;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: v.$neutral-600;
+
+  &:hover {
+    border-color: v.$brand-300;
+  }
+}
+
+.tagToggleActive {
+  border-color: v.$brand-600;
+  color: v.$brand-700;
+  background: v.$brand-50;
+}

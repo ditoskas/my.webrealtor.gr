@@ -10,6 +10,7 @@ export interface PublicAssetFilters {
   minPrice?: number;
   maxPrice?: number;
   isLand?: boolean;
+  tagId?: string;
 }
 
 class AssetRepository extends BaseRepository<IAsset> {
@@ -31,6 +32,12 @@ class AssetRepository extends BaseRepository<IAsset> {
     return this.model.find({ clientId }).sort({ createdAt: -1 }).exec();
   }
 
+  // Backs TagService.remove()'s cascade cleanup — every Asset still carrying the deleted tag's id
+  // in its `tagIds` array has just that entry pulled out, not the whole document touched otherwise.
+  pullTagFromAll(tagId: string) {
+    return this.model.updateMany({ tagIds: tagId }, { $pull: { tagIds: tagId } }).exec();
+  }
+
   // Backs GET /api/public/assets — see PUBLIC_API.md. Always restricted to active/pending
   // listings (never inactive) — that scoping is fixed, not one of the caller's filters.
   findPublicByRealtorId(realtorId: string, filters: PublicAssetFilters) {
@@ -41,6 +48,7 @@ class AssetRepository extends BaseRepository<IAsset> {
     if (filters.isLand !== undefined) query.isLand = filters.isLand;
     if (filters.propertyCategoryId) query.propertyCategoryId = filters.propertyCategoryId;
     if (filters.landCategoryId) query.landCategoryId = filters.landCategoryId;
+    if (filters.tagId) query.tagIds = filters.tagId;
     if (filters.transactionType) query.transactionType = filters.transactionType;
     if (filters.minPrice != null || filters.maxPrice != null) {
       const price: { $gte?: number; $lte?: number } = {};

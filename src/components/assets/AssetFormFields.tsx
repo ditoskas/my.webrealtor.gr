@@ -1,5 +1,6 @@
 import { Building2, Trees } from "lucide-react";
 import { useTranslation } from "@/store/hooks";
+import type { Tag } from "@/lib/types";
 import sharedStyles from "@/styles/shared.module.scss";
 import styles from "./AssetDetail.module.scss";
 
@@ -107,6 +108,45 @@ export function BoolField({
 
 export function SectionHeading({ children }: { children: string }) {
   return <h3 className={styles.sectionHeading}>{children}</h3>;
+}
+
+// Multi-select chip toggle for the realtor's own Tags (see CLAUDE.md → "Tags") — managed from
+// Profile, not here; this only assigns/unassigns already-existing tags to the asset being edited.
+// Empty state (no tags yet) just shows a hint pointing at Profile rather than an empty box.
+export function TagsField({
+  tags,
+  selectedIds,
+  onChange,
+}: {
+  tags: Tag[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const t = useTranslation();
+  const toggle = (id: string) => {
+    onChange(selectedIds.includes(id) ? selectedIds.filter((tagId) => tagId !== id) : [...selectedIds, id]);
+  };
+  return (
+    <div className={sharedStyles.field}>
+      <span className={sharedStyles.label}>{t("assets.detail.tags")}</span>
+      {tags.length === 0 ? (
+        <p className="text-xs text-neutral-400">{t("assets.detail.tagsEmpty")}</p>
+      ) : (
+        <div className={styles.tagToggleGrid}>
+          {tags.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              className={`${styles.tagToggle} ${selectedIds.includes(tag.id) ? styles.tagToggleActive : ""}`}
+              onClick={() => toggle(tag.id)}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Create-only Type selector — locked (non-interactive) once `locked` is true, i.e. on every edit

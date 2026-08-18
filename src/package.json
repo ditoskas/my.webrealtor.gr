@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "npm run seed:root && npm run seed:energy-classes && npm run seed:heating-systems && npm run seed:property-categories && npm run seed:floor-levels && npm run seed:building-floors && npm run seed:heating-mediums && npm run seed:joinery-types && npm run seed:glass-types && npm run seed:floor-types && npm run seed:garden-types && npm run seed:zoning-types && npm run seed:orientations && npm run seed:road-access-types && npm run seed:land-categories && npm run seed:slopes && npm run backfill:realtor-guids && npm run migrate:assets",
-    "predev:docker": "npm run seed:root && npm run seed:energy-classes && npm run seed:heating-systems && npm run seed:property-categories && npm run seed:floor-levels && npm run seed:building-floors && npm run seed:heating-mediums && npm run seed:joinery-types && npm run seed:glass-types && npm run seed:floor-types && npm run seed:garden-types && npm run seed:zoning-types && npm run seed:orientations && npm run seed:road-access-types && npm run seed:land-categories && npm run seed:slopes && npm run backfill:realtor-guids && npm run migrate:assets",
+    "predev": "npm run seed:root && npm run seed:energy-classes && npm run seed:heating-systems && npm run seed:property-categories && npm run seed:floor-levels && npm run seed:building-floors && npm run seed:heating-mediums && npm run seed:joinery-types && npm run seed:glass-types && npm run seed:floor-types && npm run seed:garden-types && npm run seed:zoning-types && npm run seed:orientations && npm run seed:road-access-types && npm run seed:land-categories && npm run seed:slopes && npm run backfill:realtor-guids && npm run backfill:realtor-tags && npm run migrate:assets",
+    "predev:docker": "npm run seed:root && npm run seed:energy-classes && npm run seed:heating-systems && npm run seed:property-categories && npm run seed:floor-levels && npm run seed:building-floors && npm run seed:heating-mediums && npm run seed:joinery-types && npm run seed:glass-types && npm run seed:floor-types && npm run seed:garden-types && npm run seed:zoning-types && npm run seed:orientations && npm run seed:road-access-types && npm run seed:land-categories && npm run seed:slopes && npm run backfill:realtor-guids && npm run backfill:realtor-tags && npm run migrate:assets",
     "dev": "next dev",
     "dev:docker": "next dev --webpack",
     "build": "next build",
@@ -27,6 +27,7 @@
     "seed:land-categories": "tsx ./scripts/seed-land-categories.ts",
     "seed:slopes": "tsx ./scripts/seed-slopes.ts",
     "backfill:realtor-guids": "tsx ./scripts/backfill-realtor-guids.ts",
+    "backfill:realtor-tags": "tsx ./scripts/backfill-realtor-tags.ts",
     "migrate:assets": "tsx ./scripts/migrate-properties-lands-to-assets.ts"
   },
   "dependencies": {

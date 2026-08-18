@@ -6,7 +6,7 @@ import { Button } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
 import { MessageHandler } from "@/helpers/messageHandler";
 import { useAppDispatch, useCanEdit, useCurrentUser, useTranslation } from "@/store/hooks";
-import type { ApiResponse, Asset, Client, LandCategory, PropertyCategory, Realtor } from "@/lib/types";
+import type { ApiResponse, Asset, Client, LandCategory, PropertyCategory, Realtor, Tag } from "@/lib/types";
 import sharedStyles from "@/styles/shared.module.scss";
 import AssetTable from "./AssetTable";
 import AssetSearchBar from "./AssetSearchBar";
@@ -27,6 +27,7 @@ export default function AssetsPage() {
   const [propertyCategories, setPropertyCategories] = useState<PropertyCategory[]>([]);
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
@@ -38,29 +39,35 @@ export default function AssetsPage() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
 
   // Same silent-reload / page-load count message convention as every other list page — see
   // CLAUDE.md → Footer notifications. Root fetches every realtor's listings plus the realtor list
   // (to resolve a Realtor column) and every client (to resolve the Owner column); Administrator/
-  // Operator only fetch their own realtor's listings and their own realtor's clients.
+  // Operator only fetch their own realtor's listings and their own realtor's clients. Tags are
+  // always realtor-scoped (see CLAUDE.md → "Tags") — Root has no realtorId of its own to fetch a
+  // tag set by, so the tag filter simply doesn't render for Root (AssetSearchBar hides it when
+  // `tags` is empty).
   const loadData = useCallback(
     async (options?: { silent?: boolean }) => {
       if (!user) return;
       try {
         const assetsUrl = isRoot ? "/api/assets" : `/api/assets?realtorId=${user.realtorId}`;
         const clientsUrl = isRoot ? "/api/clients" : `/api/clients?realtorId=${user.realtorId}`;
-        const [assetsRes, realtorsRes, propertyCategoriesRes, landCategoriesRes, clientsRes] = await Promise.all([
+        const [assetsRes, realtorsRes, propertyCategoriesRes, landCategoriesRes, clientsRes, tagsRes] = await Promise.all([
           apiClient.get<ApiResponse<Asset[]>>(assetsUrl),
           isRoot ? apiClient.get<ApiResponse<Realtor[]>>("/api/realtors") : Promise.resolve(null),
           apiClient.get<ApiResponse<PropertyCategory[]>>("/api/property-categories"),
           apiClient.get<ApiResponse<LandCategory[]>>("/api/land-categories"),
           apiClient.get<ApiResponse<Client[]>>(clientsUrl),
+          isRoot ? Promise.resolve(null) : apiClient.get<ApiResponse<Tag[]>>(`/api/tags?realtorId=${user.realtorId}`),
         ]);
         setAssets(assetsRes.data.data);
         if (realtorsRes) setRealtors(realtorsRes.data.data);
         setPropertyCategories(propertyCategoriesRes.data.data);
         setLandCategories(landCategoriesRes.data.data);
         setClients(clientsRes.data.data);
+        setTags(tagsRes ? tagsRes.data.data : []);
         setError(null);
         if (!options?.silent) {
           MessageHandler.normal(dispatch, t("assets.countMessage", { count: assetsRes.data.data.length }));
@@ -136,6 +143,7 @@ export default function AssetsPage() {
       }
       if (min !== null && !Number.isNaN(min) && asset.price < min) return false;
       if (max !== null && !Number.isNaN(max) && asset.price > max) return false;
+      if (tagFilter.length > 0 && !asset.tagIds.some((tagId) => tagFilter.includes(tagId))) return false;
 
       if (search) {
         const ownerName = asset.clientId ? owners[asset.clientId]?.name ?? "" : "";
@@ -148,7 +156,7 @@ export default function AssetsPage() {
 
       return true;
     });
-  }, [assets, kindFilter, transactionTypeFilter, statusFilter, categoryFilter, minPrice, maxPrice, searchText, owners]);
+  }, [assets, kindFilter, transactionTypeFilter, statusFilter, categoryFilter, minPrice, maxPrice, tagFilter, searchText, owners]);
 
   return (
     <div>
@@ -183,6 +191,9 @@ export default function AssetsPage() {
             onMaxPriceChange={setMaxPrice}
             searchText={searchText}
             onSearchTextChange={setSearchText}
+            tags={tags}
+            tagFilter={tagFilter}
+            onTagFilterChange={setTagFilter}
           />
           <AssetTable
             assets={filteredAssets}

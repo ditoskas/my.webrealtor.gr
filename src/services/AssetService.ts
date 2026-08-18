@@ -26,6 +26,12 @@ export class AssetService {
     return assetRepository.findByClientId(clientId);
   }
 
+  // Backs TagService.remove() — see CLAUDE.md → "Tags".
+  static async removeTagFromAll(tagId: string) {
+    await connectDB();
+    return assetRepository.pullTagFromAll(tagId);
+  }
+
   // Backs GET /api/public/assets — see PUBLIC_API.md.
   static async listPublicForRealtor(realtorId: string, filters: PublicAssetFilters) {
     await connectDB();

@@ -57,6 +57,20 @@ function toImages(value: unknown): IMediaImage[] {
   return images;
 }
 
+// Tags are managed on Profile, referenced here by id only — this just keeps whatever array of
+// valid-looking ObjectId strings came back, silently dropping anything malformed (same "trust the
+// UI, validate the shape" discipline as toImages above). Not cross-checked against the realtor's
+// actual tag set here; the UI only ever offers a realtor's own already-fetched tags to pick from.
+function toTagIds(value: unknown): mongoose.Types.ObjectId[] {
+  if (!Array.isArray(value)) return [];
+  const ids: mongoose.Types.ObjectId[] = [];
+  for (const item of value) {
+    const id = toObjectId(item);
+    if (id) ids.push(id);
+  }
+  return ids;
+}
+
 export interface ParsedAssetBody {
   errors: string[];
   data: Partial<IAsset>;
@@ -210,6 +224,8 @@ export function parseAssetBody(body: Record<string, unknown>): ParsedAssetBody {
     googleMapsUrl: typeof body.googleMapsUrl === "string" ? body.googleMapsUrl.trim() : "",
 
     images: toImages(body.images),
+
+    tagIds: toTagIds(body.tagIds),
   };
 
   return { errors, data };

@@ -8,10 +8,10 @@ import apiClient from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { MessageHandler } from "@/helpers/messageHandler";
 import { useAppDispatch, useCurrentUser, useTranslation } from "@/store/hooks";
-import type { ApiResponse, Asset, Client, PropertyImage, Realtor } from "@/lib/types";
+import type { ApiResponse, Asset, Client, PropertyImage, Realtor, Tag } from "@/lib/types";
 import sharedStyles from "@/styles/shared.module.scss";
 import styles from "./AssetDetail.module.scss";
-import { SelectField, TextField, BoolField, SectionHeading, TypeField } from "./AssetFormFields";
+import { SelectField, TextField, BoolField, SectionHeading, TypeField, TagsField } from "./AssetFormFields";
 
 interface PoolOption {
   id: string;
@@ -183,6 +183,10 @@ interface FormValues {
   // components/assets/AssetMediaPage. Carried through unmodified on save so an edit here never
   // wipes out images uploaded via that page.
   images: PropertyImage[];
+
+  // The realtor's own tags (see CLAUDE.md → "Tags"), assigned/unassigned via AssetFormFields'
+  // TagsField. Managed (created/renamed/deleted) from Profile, not here.
+  tagIds: string[];
 }
 
 const EMPTY_VALUES: FormValues = {
@@ -305,6 +309,7 @@ const EMPTY_VALUES: FormValues = {
   googleMapsUrl: "",
 
   images: [],
+  tagIds: [],
 };
 
 function assetToFormValues(asset: Asset): FormValues {
@@ -431,6 +436,7 @@ function assetToFormValues(asset: Asset): FormValues {
     googleMapsUrl: asset.googleMapsUrl ?? "",
 
     images: asset.images ?? [],
+    tagIds: asset.tagIds ?? [],
   };
 }
 
@@ -449,6 +455,7 @@ export default function AssetDetail({ mode, assetId }: AssetDetailProps) {
   const [values, setValues] = useState<FormValues>({ ...EMPTY_VALUES, realtorId: user?.realtorId ?? "" });
   const [realtors, setRealtors] = useState<Realtor[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [poolOptions, setPoolOptions] = useState<PoolOptionsState>(EMPTY_POOL_OPTIONS);
   const [loading, setLoading] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
@@ -556,6 +563,20 @@ export default function AssetDetail({ mode, assetId }: AssetDetailProps) {
       .then((response) => setClients(response.data.data))
       .catch(() => setClients([]));
   }, [isRoot, values.realtorId]);
+
+  // Tags are always realtor-scoped (see CLAUDE.md → "Tags") — no unscoped list exists, unlike
+  // Clients above, so this always passes realtorId once one is known, for every role including Root.
+  useEffect(() => {
+    if (!values.realtorId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTags([]);
+      return;
+    }
+    apiClient
+      .get<ApiResponse<Tag[]>>(`/api/tags?realtorId=${values.realtorId}`)
+      .then((response) => setTags(response.data.data))
+      .catch(() => setTags([]));
+  }, [values.realtorId]);
 
   // The selected realtor's own address — used by the Location map to center on somewhere relevant
   // before this listing has a location of its own. Fetched by id rather than read off `realtors`
@@ -692,6 +713,7 @@ export default function AssetDetail({ mode, assetId }: AssetDetailProps) {
             </select>
           </div>
         </div>
+        <TagsField tags={tags} selectedIds={values.tagIds} onChange={(ids) => setField("tagIds", ids)} />
       </Card>
 
       <Card className={styles.card}>

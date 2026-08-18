@@ -147,6 +147,13 @@ export interface IAsset extends Document {
   // Media
   images: IMediaImage[];
 
+  // The realtor's own tags (see models/Tag.ts, CLAUDE.md → "Tags") assigned to this listing —
+  // no `ref` populate at this layer (AssetDetail/AssetsPage resolve names client-side against
+  // their own already-fetched `/api/tags?realtorId=` list, same "resolve client-side" convention
+  // as Note.entityId/Viewing.listingId), but IDs are still validated to belong to a real Tag by
+  // virtue of only ever being set from that same fetched list in the UI.
+  tagIds: mongoose.Types.ObjectId[];
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -286,11 +293,14 @@ const assetSchema = new Schema<IAsset, IAssetModel>(
 
     // Media
     images: { type: [mediaImageSchema], default: [] },
+
+    tagIds: { type: [Schema.Types.ObjectId], ref: "Tag", default: [] },
   },
   baseSchemaOptions
 );
 
 assetSchema.index({ realtorId: 1, isLand: 1 });
+assetSchema.index({ tagIds: 1 });
 
 export const Asset =
   (mongoose.models.Asset as IAssetModel) || mongoose.model<IAsset, IAssetModel>("Asset", assetSchema);
