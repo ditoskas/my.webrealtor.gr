@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, LocationMapPicker } from "@/components/ui";
+import { Button, Card, LocationMapPicker, SearchableSelect } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { MessageHandler } from "@/helpers/messageHandler";
@@ -662,13 +662,21 @@ export default function AssetDetail({ mode, assetId }: AssetDetailProps) {
               options={realtors.map((realtor) => ({ id: realtor.id, name: `${realtor.firstName} ${realtor.lastName}` }))}
             />
           )}
-          <SelectField
-            id="clientId"
-            label={t("assets.detail.clientOwner")}
-            value={values.clientId}
-            onChange={(value) => setField("clientId", value)}
-            options={clients.map((client) => ({ id: client.id, name: `${client.firstName} ${client.lastName}` }))}
-          />
+          <div className={sharedStyles.field}>
+            <label className={sharedStyles.label} htmlFor="clientId">
+              {t("assets.detail.clientOwner")}
+            </label>
+            <SearchableSelect
+              id="clientId"
+              value={values.clientId}
+              onChange={(value) => setField("clientId", value)}
+              placeholder={t("common.selectPlaceholder")}
+              options={[
+                { value: "", label: t("assets.detail.clientOwnerNone") },
+                ...clients.map((client) => ({ value: client.id, label: `${client.firstName} ${client.lastName}` })),
+              ]}
+            />
+          </div>
           <TextField id="title" label={t("assets.detail.internalTitle")} value={values.title} onChange={(value) => setField("title", value)} />
           <div className={sharedStyles.field}>
             <label className={sharedStyles.label} htmlFor="status">{t("assets.detail.status")}</label>

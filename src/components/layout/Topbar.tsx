@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Home, Settings, Handshake, LogOut, ChevronDown, Languages, Check, UserCircle, Wrench, Receipt, FileSignature, ClipboardList, MessagesSquare,
+  LayoutDashboard, Users, Home, Settings, Handshake, LogOut, ChevronDown, Languages, Check, UserCircle, Wrench, Receipt, FileSignature, ClipboardList,
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { Dropdown } from "@/components/ui";
@@ -18,13 +18,15 @@ import logo from "@/assets/img/webrealtor-logo.png";
 import styles from "./Topbar.module.scss";
 import dropdownStyles from "@/components/ui/Dropdown.module.scss";
 
-// Realtors and Logs were dropped from here and moved into Settings' own sidebar instead — see
-// CLAUDE.md → "Settings-embedded Realtors and Logs". Both were already Root-only (see
-// ROOT_ONLY_PREFIXES in proxy.ts), same as Settings itself, so nothing else about their access
-// changed, only where they're reached from.
+// Realtors, Logs, and Messages were dropped from here and moved into Settings' own sidebar
+// instead — see CLAUDE.md → "Settings-embedded Realtors and Logs". Realtors/Logs were already
+// Root-only (see ROOT_ONLY_PREFIXES in proxy.ts), same as Settings itself; Messages used to be
+// realtor-scoped and reachable by every role, now Root-only too, so nothing else about
+// Realtors'/Logs' access changed but Messages' access did — only where all three are reached
+// from is new.
 //
-// Rendered in three groups, not one flat map, because the "Listing" and "Tools" dropdowns are
-// interspersed between these rather than trailing them — see the nav markup below.
+// Rendered in two groups, not one flat map, because the "Tools" dropdown is interspersed between
+// these rather than trailing them — see the nav markup below.
 const NAV_LINKS_BEFORE_TOOLS = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { href: "/clients", labelKey: "nav.clients", icon: Users },
@@ -32,21 +34,18 @@ const NAV_LINKS_BEFORE_TOOLS = [
   // management". One top-level link now, replacing the old "Listing" dropdown that grouped two.
   { href: "/assets", labelKey: "nav.assets", icon: Home },
   { href: "/transactions", labelKey: "nav.transactions", icon: Handshake },
-  { href: "/messages", labelKey: "nav.messages", icon: MessagesSquare },
 ];
 const NAV_LINKS_AFTER_TOOLS = [{ href: "/settings", labelKey: "nav.settings", icon: Settings }];
 
 // Root reaches every section; Administrator/Operator are restricted to these — mirrors
-// proxy.ts's ROOT_ONLY_PREFIXES (kept in sync by hand, see CLAUDE.md → Auth). Transactions and
-// Messages are deliberately accessible here, same level as Clients/Assets — see CLAUDE.md →
-// "Transactions"/"Messages" (Messages is realtor-scoped like the rest; the Message Forms
-// *config* stays Root-only, reached instead via a row action on /realtors).
+// proxy.ts's ROOT_ONLY_PREFIXES (kept in sync by hand, see CLAUDE.md → Auth). Transactions is
+// deliberately accessible here, same level as Clients/Assets — see CLAUDE.md → "Transactions".
+// Messages moved into Settings' own sidebar and is Root-only now — see CLAUDE.md → "Messages".
 const NON_ROOT_ALLOWED_HREFS = new Set([
   "/dashboard",
   "/clients",
   "/assets",
   "/transactions",
-  "/messages",
   "/tools",
 ]);
 

@@ -333,6 +333,7 @@ const el: Messages = {
 
       realtor: "Μεσίτης",
       clientOwner: "Πελάτης (ιδιοκτήτης)",
+      clientOwnerNone: "Χωρίς ιδιοκτήτη",
       internalTitle: "Εσωτερικός τίτλος",
       status: "Κατάσταση",
       transactionType: "Τύπος Συναλλαγής",

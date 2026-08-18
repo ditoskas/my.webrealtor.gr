@@ -9,8 +9,8 @@ import type { UserRole } from "@/lib/types";
 const PUBLIC_PATHS = ["/login", "/signup", "/confirm-registration"];
 
 // Root reaches every section. Administrator/Operator are restricted to Dashboard/Clients/
-// Properties — everything else (Realtors, Users, Settings, Logs) is Root-only.
-const ROOT_ONLY_PREFIXES = ["/realtors", "/users", "/settings", "/logs"];
+// Assets/Transactions — everything else (Realtors, Users, Settings, Logs, Messages) is Root-only.
+const ROOT_ONLY_PREFIXES = ["/realtors", "/users", "/settings", "/logs", "/messages"];
 
 function hasAccess(role: UserRole, pathname: string): boolean {
   if (role === "Root") return true;

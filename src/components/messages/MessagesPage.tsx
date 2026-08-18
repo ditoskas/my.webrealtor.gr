@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui";
 import apiClient from "@/lib/apiClient";
 import { MessageHandler } from "@/helpers/messageHandler";
-import { useAppDispatch, useCanEdit, useCurrentUser, useTranslation } from "@/store/hooks";
+import { useAppDispatch, useCanEdit, useTranslation } from "@/store/hooks";
 import type { ApiResponse, Message, PaginatedResponse, Realtor } from "@/lib/types";
 import sharedStyles from "@/styles/shared.module.scss";
 import MessageTable from "./MessageTable";
@@ -14,12 +14,13 @@ import styles from "./MessagesPage.module.scss";
 
 const PAGE_SIZE = 100;
 
+// Root-only (reached via Settings' sidebar, see CLAUDE.md → "Messages") — unlike most list pages
+// there's no Root-vs-scoped split left to make, every caller here is Root, so this always fetches
+// unscoped across every realtor and always shows the Realtor column, same as LogsPage.
 export default function MessagesPage() {
   const dispatch = useAppDispatch();
   const t = useTranslation();
-  const user = useCurrentUser();
   const canEdit = useCanEdit();
-  const isRoot = user?.role === "Root";
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [total, setTotal] = useState(0);
@@ -34,19 +35,17 @@ export default function MessagesPage() {
   // No setState calls before the first `await` — see RealtorsPage for why.
   const loadMessages = useCallback(
     async (targetPage: number) => {
-      if (!user) return;
       try {
-        const scopeParam = isRoot ? "" : `&realtorId=${user.realtorId}`;
         const [messagesRes, realtorsRes] = await Promise.all([
           apiClient.get<ApiResponse<PaginatedResponse<Message>>>(
-            `/api/messages?page=${targetPage}&pageSize=${PAGE_SIZE}${scopeParam}`
+            `/api/messages?page=${targetPage}&pageSize=${PAGE_SIZE}`
           ),
-          isRoot ? apiClient.get<ApiResponse<Realtor[]>>("/api/realtors") : Promise.resolve(null),
+          apiClient.get<ApiResponse<Realtor[]>>("/api/realtors"),
         ]);
         setMessages(messagesRes.data.data.items);
         setTotal(messagesRes.data.data.total);
         setPage(messagesRes.data.data.page);
-        if (realtorsRes) setRealtors(realtorsRes.data.data);
+        setRealtors(realtorsRes.data.data);
         setError(null);
         // Page-load notification convention — see CLAUDE.md → Footer notifications.
         MessageHandler.normal(dispatch, t("messages.countMessage", { count: messagesRes.data.data.total }));
@@ -56,7 +55,7 @@ export default function MessagesPage() {
         setLoading(false);
       }
     },
-    [dispatch, isRoot, user, t]
+    [dispatch, t]
   );
 
   useEffect(() => {
@@ -93,7 +92,7 @@ export default function MessagesPage() {
           <MessageTable
             messages={messages}
             realtorNames={realtorNames}
-            showRealtorColumn={isRoot}
+            showRealtorColumn
             canEdit={canEdit}
             onView={setMessageToView}
             onDelete={setMessageToDelete}

@@ -163,8 +163,9 @@ when asked.
   printed on the Order tool below)/userId(optional)/saleCommission/rentCommission (fractions, e.g. `0.1` =
   10%, applied to buy/rent actions respectively). `RealtorService.list()` merges **derived, not stored**
   `clientCount`/`propertyCount`/`landCount` (parallel `countDocuments`) — absent right after create/
-  update, present on `list()`. View page `/realtors/[id]/view` (every role). Realtors/Logs nav moved into
-  Settings' own sidebar (same routes, same Root-only gating, just relocated). Also has a `guid`
+  update, present on `list()`. View page `/realtors/[id]/view` (every role). Realtors/Logs/Messages nav
+  moved into Settings' own sidebar (same routes; Realtors/Logs kept their existing Root-only gating,
+  Messages gained one — see "Messages" below). Also has a `guid`
   (server-generated, unique, never client-settable — same discipline as `MessageForm.guid`) that
   identifies the realtor to `GET /api/public/assets` (see "Messages"/PUBLIC_API.md below); shown
   read-only on the View page's "Public API" card, Root-only. Pre-existing realtors were backfilled
@@ -211,9 +212,14 @@ when asked.
   so later config edits never rewrite
   already-received history) and best-effort emails the recipient a `key: value` rendering of the
   submitted JSON (`MessageService.receive`, `lib/mail.ts`'s `sendMail` — same best-effort
-  discipline as every other email in this app). Received messages surface on their own top-level
-  `/messages` page (every role, realtor-scoped like Clients/Assets — see "Data scoping by
-  realtor"), paginated like `/logs`.
+  discipline as every other email in this app). Received messages surface on their own `/messages`
+  page, paginated like `/logs`. Originally a top-level nav item reachable by every role
+  (realtor-scoped like Clients/Assets — see "Data scoping by realtor"); now **Root-only**, moved
+  into Settings' own sidebar alongside Realtors/Logs (same `ROOT_ONLY_PREFIXES` gating in
+  `proxy.ts`, same hand-duplicated allowlist sync in `Topbar.tsx`'s `NON_ROOT_ALLOWED_HREFS` —
+  see "Auth"). Since every caller is Root now, `MessagesPage.tsx` always fetches unscoped across
+  every realtor and always shows the Realtor column — no more Root-vs-scoped branch to make, same
+  as `LogsPage.tsx`.
 
 - **Public listings API** — the second `/api/public/**` endpoint, `GET /api/public/assets` (see
   PUBLIC_API.md for the full contract; renamed from `GET /api/public/properties` as part of the
@@ -421,8 +427,9 @@ Footer's live ticking clock (seconds-resolution, no date component) still uses
 (with actor attribution), Auth (login/logout/session/role gating, Logs page), self-service Registration,
 all 15 Settings pool entities, Asset/Realtor/Client View Pages, Price History, Notes, Files/Attachments
 (+ `EntityDetailTabs`), Owns/Interest For/Viewings (Client-only tabs), Transactions, Dashboard (real
-aggregates), self-service Profile, i18n infra with every feature translated, Messages (Root-only
-Message Form config + public intake API), public listings API (`GET /api/public/assets`, covering
+aggregates), self-service Profile, i18n infra with every feature translated, Messages (Root-only,
+Settings-embedded: Message Form config + received-messages page + public intake API), public
+listings API (`GET /api/public/assets`, covering
 both property and land assets) — see `PUBLIC_API.md` for both.
 
 **Still skeleton-only**: the Property Options Settings tab (placeholder text only, no backing entity).

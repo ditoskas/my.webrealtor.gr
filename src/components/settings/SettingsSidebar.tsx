@@ -1,6 +1,7 @@
 import {
   Contact,
   ScrollText,
+  MessagesSquare,
   UserRound,
   Flame,
   Zap,
@@ -26,6 +27,7 @@ import styles from "./SettingsPage.module.scss";
 export type SettingsSection =
   | "realtors"
   | "logs"
+  | "messages"
   | "users"
   | "heating"
   | "energyClass"
@@ -48,6 +50,9 @@ const SECTIONS: { id: SettingsSection; labelKey: string; icon: typeof Flame }[] 
   // Moved here from the Topbar's main nav — see CLAUDE.md → "Settings-embedded Realtors and Logs".
   { id: "realtors", labelKey: "nav.realtors", icon: Contact },
   { id: "logs", labelKey: "nav.logs", icon: ScrollText },
+  // Messages was realtor-scoped and reachable by every role from the main nav; now Root-only,
+  // same reasoning as Realtors/Logs above — see CLAUDE.md → "Messages".
+  { id: "messages", labelKey: "nav.messages", icon: MessagesSquare },
   { id: "users", labelKey: "nav.users", icon: UserRound },
   { id: "heating", labelKey: "settings.heatingTabLabel", icon: Flame },
   { id: "energyClass", labelKey: "settingsEntities.energyClass", icon: Zap },

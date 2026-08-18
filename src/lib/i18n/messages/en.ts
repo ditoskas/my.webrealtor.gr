@@ -336,6 +336,7 @@ const en = {
 
       realtor: "Realtor",
       clientOwner: "Client (owner)",
+      clientOwnerNone: "No owner",
       internalTitle: "Internal title",
       status: "Status",
       transactionType: "Transaction Type",

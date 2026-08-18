@@ -333,6 +333,7 @@ const ru: Messages = {
 
       realtor: "Риелтор",
       clientOwner: "Клиент (владелец)",
+      clientOwnerNone: "Без владельца",
       internalTitle: "Внутреннее название",
       status: "Статус",
       transactionType: "Тип сделки",
