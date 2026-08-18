@@ -439,6 +439,9 @@ const el: Messages = {
 
       descriptionGreek: "Περιγραφή (Ελληνικά)",
 
+      tags: "Ετικέτες",
+      tagsEmpty: "Δεν υπάρχουν ετικέτες ακόμα — προσθέστε από τη σελίδα του προφίλ σας.",
+
       country: "Χώρα",
       region: "Περιοχή",
       municipality: "Δήμος",
