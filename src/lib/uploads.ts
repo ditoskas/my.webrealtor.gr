@@ -62,16 +62,20 @@ export function isValidObjectIdSegment(value: unknown): value is string {
 }
 
 /**
- * `<UPLOADS_DIR>/realtors/<realtorId>/<listingId>/` — every property/land upload lands in a
- * per-realtor, per-listing folder (see POST /api/uploads), organized for anyone browsing
- * UPLOADS_DIR directly on disk, not just via the app.
+ * `<UPLOADS_DIR>/realtors/<realtorId>/assets/<listingId>/` — every Asset (property or land, see
+ * CLAUDE.md → "Asset management") upload lands in a per-realtor, per-listing folder nested under
+ * its own `assets` segment (see POST /api/uploads), so it can never collide with that same
+ * realtor's `profile` folder below, and stays organized for anyone browsing UPLOADS_DIR directly
+ * on disk. Renamed from the flat `realtors/<realtorId>/<listingId>/` layout as part of the
+ * Property+Land merge — see `scripts/migrate-asset-images-to-nested-folder.ts` for the one-off
+ * move of already-uploaded files/URLs into this shape.
  */
 export function listingUploadDir(realtorId: string, listingId: string): string {
-  return path.join(UPLOADS_DIR, "realtors", realtorId, listingId);
+  return path.join(UPLOADS_DIR, "realtors", realtorId, "assets", listingId);
 }
 
 export function listingUploadUrlPrefix(realtorId: string, listingId: string): string {
-  return `${UPLOADS_PUBLIC_URL}/realtors/${realtorId}/${listingId}`;
+  return `${UPLOADS_PUBLIC_URL}/realtors/${realtorId}/assets/${listingId}`;
 }
 
 /**

@@ -42,5 +42,12 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.png).*)"],
+  // `uploads` is excluded alongside `api`: GET /uploads/[...path] (src/app/uploads/[...path]/
+  // route.ts) is a deliberately public, unauthenticated file-serving route — living outside
+  // app/api/ only so its URL is /uploads/<file> instead of /api/uploads/<file> — but without this
+  // exclusion this matcher still caught it, so every request (including the public property/land
+  // photos GET /api/public/assets returns to third-party sites) got redirected to /login instead
+  // of the actual file. That 302/307-to-HTML response is exactly what trips Chrome's Opaque
+  // Response Blocking (ERR_BLOCKED_BY_ORB) on a cross-origin <img> load.
+  matcher: ["/((?!api|uploads|_next/static|_next/image|favicon.ico|icon.png).*)"],
 };

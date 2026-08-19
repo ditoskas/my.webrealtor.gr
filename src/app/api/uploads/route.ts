@@ -12,13 +12,13 @@ import {
 } from "@/lib/uploads";
 import type { PropertyImage } from "@/lib/types";
 
-// Not tied to a Property/Land document — this just persists files to disk (under
-// <UPLOADS_DIR>/realtors/<realtorId>/<listingId>/, see lib/uploads.ts) and hands back { id, url }
-// pairs for the caller (the dedicated media page) to attach to a listing via
-// PUT /api/properties/[id]/images or PUT /api/lands/[id]/images, which is where the resulting
-// LogEntry gets written (this route doesn't touch Mongo at all). realtorId/listingId come from the
-// media page's already-loaded Property/Land, not user-typed input, but are still validated as
-// ObjectId-shaped before being used as path segments.
+// Not tied to an Asset document — this just persists files to disk (under
+// <UPLOADS_DIR>/realtors/<realtorId>/assets/<listingId>/, see lib/uploads.ts) and hands back
+// { id, url } pairs for the caller (the dedicated media page) to attach to a listing via
+// PUT /api/assets/[id]/images, which is where the resulting LogEntry gets written (this route
+// doesn't touch Mongo at all). realtorId/listingId come from the media page's already-loaded
+// Asset, not user-typed input, but are still validated as ObjectId-shaped before being used as
+// path segments.
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
