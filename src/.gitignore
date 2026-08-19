@@ -38,7 +38,7 @@ yarn-error.log*
 
 # local UPLOADS_DIR fallback (see lib/uploads.ts) — outside Docker, uploaded listing photos land
 # here unless UPLOADS_DIR is set
-/uploads
+/shared
 
 # typescript
 *.tsbuildinfo

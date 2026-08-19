@@ -2,9 +2,16 @@ import path from "path";
 import type { AttachableEntityType, TransactionFileKind } from "./types";
 
 // Server-only — deliberately not NEXT_PUBLIC_ (see .env.example), since only API route handlers
-// (POST /api/uploads, GET /uploads/[...path]) ever need these. Falls back to a local ./uploads
-// folder (gitignored) so a bare `npm run dev` outside Docker still works without extra setup.
-export const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), "uploads");
+// (POST /api/uploads, GET /uploads/[...path]) ever need these. Falls back to a local ./shared
+// folder (gitignored) so a bare `npm run dev` outside Docker still works without extra setup —
+// deliberately named to match the production symlink (www/backend/shared, see
+// deployment-webrealtor-backend.yml's "Create symlink for shared directory in backend" task), not
+// ./uploads: if UPLOADS_DIR ever fails to reach the environment (missing .env — see the
+// deploy-wiped-shared-uploads incident), this fallback previously pointed at a plain, unprotected
+// folder that every redeploy's wipe-then-copy step would silently delete. Named "shared" instead,
+// a misconfigured deploy at worst writes into the very folder the wipe step already excludes by
+// name, instead of quietly losing every upload on the next redeploy.
+export const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), "shared");
 export const UPLOADS_PUBLIC_URL = process.env.UPLOADS_PUBLIC_URL || "/uploads";
 
 export const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024; // 10MB per file
