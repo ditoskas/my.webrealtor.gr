@@ -38,12 +38,16 @@ class AssetRepository extends BaseRepository<IAsset> {
     return this.model.updateMany({ tagIds: tagId }, { $pull: { tagIds: tagId } }).exec();
   }
 
-  // Backs GET /api/public/assets — see PUBLIC_API.md. Always restricted to active/pending
-  // listings (never inactive) — that scoping is fixed, not one of the caller's filters.
+  // Backs GET /api/public/assets — see PUBLIC_API.md. Always restricted to active/pending,
+  // *published* listings (never inactive, never a null publishedAt) — that scoping is fixed, not
+  // one of the caller's filters. Sorted by publish date (most recent first), not createdAt — the
+  // public-facing order is "what went live most recently", independent of when it was first
+  // entered into the system.
   findPublicByRealtorId(realtorId: string, filters: PublicAssetFilters) {
     const query: QueryFilter<IAsset> = {
       realtorId,
       status: { $in: ["active", "pending"] },
+      publishedAt: { $ne: null },
     };
     if (filters.isLand !== undefined) query.isLand = filters.isLand;
     if (filters.propertyCategoryId) query.propertyCategoryId = filters.propertyCategoryId;
@@ -60,32 +64,49 @@ class AssetRepository extends BaseRepository<IAsset> {
       .find(query)
       .populate("propertyCategoryId", "name slug")
       .populate("landCategoryId", "name slug")
-      .sort({ createdAt: -1 })
+      .sort({ publishedAt: -1 })
       .exec();
   }
 
-  // Backs GET /api/public/assets/[id] — see PUBLIC_API.md. Same active/pending-only scoping as
-  // findPublicByRealtorId above, plus realtorId, so a caller can't fetch another realtor's asset
-  // (or an inactive one) just by guessing an id — the id alone is never sufficient.
+  // Backs GET /api/public/assets/[id] — see PUBLIC_API.md. Same active/pending + published-only
+  // scoping as findPublicByRealtorId above, plus realtorId, so a caller can't fetch another
+  // realtor's asset (or an inactive/unpublished one) just by guessing an id — the id alone is
+  // never sufficient.
   findPublicByIdForRealtor(id: string, realtorId: string) {
     return this.model
-      .findOne({ _id: id, realtorId, status: { $in: ["active", "pending"] } })
+      .findOne({ _id: id, realtorId, status: { $in: ["active", "pending"] }, publishedAt: { $ne: null } })
       .populate("propertyCategoryId", "name slug")
       .populate("landCategoryId", "name slug")
       .exec();
   }
 
-  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Unpopulated: used internally
-  // only, to read the reference asset's own category id before building the candidates query
-  // below — a populated category ref can't be reused directly as a filter value.
-  findActiveByIdForRealtor(id: string, realtorId: string) {
-    return this.model.findOne({ _id: id, realtorId, status: { $in: ["active", "pending"] } }).exec();
+  // Backs GET /api/public/recent/[size] — see PUBLIC_API.md. Most recently *published* listings
+  // across both kinds, for a "latest listings" widget — same active/pending + published-only
+  // scoping as every other public endpoint, capped to `limit` and sorted newest-published-first.
+  findRecentPublishedByRealtorId(realtorId: string, limit: number) {
+    return this.model
+      .find({ realtorId, status: { $in: ["active", "pending"] }, publishedAt: { $ne: null } })
+      .populate("propertyCategoryId", "name slug")
+      .populate("landCategoryId", "name slug")
+      .sort({ publishedAt: -1 })
+      .limit(limit)
+      .exec();
   }
 
-  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Same realtor + active/pending
-  // scoping as findPublicByRealtorId, plus the reference asset's own kind (isLand) and action
-  // (transactionType); category is optional so the caller can drop it and re-query once
-  // same-category candidates run under AssetService.SIMILAR_ASSET_LIMIT.
+  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Unpopulated: used internally
+  // only, to read the reference asset's own category id before building the candidates query
+  // below — a populated category ref can't be reused directly as a filter value. Published-only,
+  // same as every other public endpoint — an unpublished reference is treated as not found.
+  findActiveByIdForRealtor(id: string, realtorId: string) {
+    return this.model
+      .findOne({ _id: id, realtorId, status: { $in: ["active", "pending"] }, publishedAt: { $ne: null } })
+      .exec();
+  }
+
+  // Backs GET /api/public/similar/[assetId] — see PUBLIC_API.md. Same realtor + active/pending +
+  // published-only scoping as findPublicByRealtorId, plus the reference asset's own kind (isLand)
+  // and action (transactionType); category is optional so the caller can drop it and re-query
+  // once same-category candidates run under AssetService.SIMILAR_ASSET_LIMIT.
   findSimilarCandidates(filters: {
     realtorId: string;
     isLand: boolean;
@@ -98,6 +119,7 @@ class AssetRepository extends BaseRepository<IAsset> {
       isLand: filters.isLand,
       transactionType: filters.transactionType,
       status: { $in: ["active", "pending"] },
+      publishedAt: { $ne: null },
       _id: { $ne: filters.excludeId },
     };
     if (filters.categoryId) {

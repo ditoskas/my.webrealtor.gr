@@ -4,3 +4,22 @@
   width: 100%;
   text-align: left;
 }
+
+// Read-only tag chips for the Tags column — see AssetTable.tsx. Distinct from
+// AssetFormFields.tsx's TagsField/AssetSearchBar's interactive toggle chips (no cursor/hover):
+// this is a static display of an asset's already-assigned tags, not a picker.
+.tagChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.tagChip {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: v.$neutral-100;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: v.$neutral-600;
+  white-space: nowrap;
+}

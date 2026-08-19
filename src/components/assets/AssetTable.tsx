@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Eye, Images, Pencil, Phone, Receipt, Trees, Trash2 } from "lucide-react";
+import { Building2, Eye, Globe, GlobeOff, Images, Pencil, Phone, Receipt, Trees, Trash2 } from "lucide-react";
 import type { Asset, PropertyStatus } from "@/lib/types";
 import { Card, Button, Badge } from "@/components/ui";
 import { useTranslation } from "@/store/hooks";
@@ -23,6 +23,7 @@ interface AssetTableProps {
   propertyCategoryNames: Record<string, string>;
   landCategoryNames: Record<string, string>;
   owners: Record<string, OwnerInfo>;
+  tagNames: Record<string, string>;
   showRealtorColumn: boolean;
   canEdit: boolean;
   onView: (asset: Asset) => void;
@@ -30,6 +31,7 @@ interface AssetTableProps {
   onDelete: (asset: Asset) => void;
   onMedia: (asset: Asset) => void;
   onReceipt: (asset: Asset) => void;
+  onTogglePublish: (asset: Asset) => void;
 }
 
 // Merges the old PropertyTable + LandTable into one — see CLAUDE.md → "Asset management". A Type
@@ -41,6 +43,7 @@ export default function AssetTable({
   propertyCategoryNames,
   landCategoryNames,
   owners,
+  tagNames,
   showRealtorColumn,
   canEdit,
   onView,
@@ -48,10 +51,11 @@ export default function AssetTable({
   onDelete,
   onMedia,
   onReceipt,
+  onTogglePublish,
 }: AssetTableProps) {
   const t = useTranslation();
-  // Kind, Type, Status, Category, Size, Location, Price, Owner, Actions — plus Realtor when shown.
-  const columnCount = 9 + (showRealtorColumn ? 1 : 0);
+  // Kind, Type, Status, Category, Tags, Size, Location, Price, Owner, Actions — plus Realtor when shown.
+  const columnCount = 10 + (showRealtorColumn ? 1 : 0);
 
   return (
     <Card className="overflow-hidden">
@@ -63,6 +67,7 @@ export default function AssetTable({
               <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerType")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerStatus")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerCategory")}</th>
+              <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerTags")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerSize")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerLocation")}</th>
               <th className={sharedStyles.tableHeaderCell}>{t("assets.table.headerPrice")}</th>
@@ -104,9 +109,27 @@ export default function AssetTable({
                       {asset.transactionType === "rent" ? t("assets.table.forRent") : t("assets.table.forSale")}
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={STATUS_VARIANT[asset.status]}>{t(`assets.status.${asset.status}`)}</Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={STATUS_VARIANT[asset.status]}>{t(`assets.status.${asset.status}`)}</Badge>
+                        <Badge variant={asset.publishedAt ? "active" : "inactive"}>
+                          {t(asset.publishedAt ? "assets.table.publishedYes" : "assets.table.publishedNo")}
+                        </Badge>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-600">{categoryName ?? "—"}</td>
+                    <td className="px-6 py-4 text-sm text-neutral-600">
+                      {asset.tagIds.length > 0 ? (
+                        <div className={styles.tagChips}>
+                          {asset.tagIds.map((tagId) => (
+                            <span key={tagId} className={styles.tagChip}>
+                              {tagNames[tagId] ?? tagId}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-neutral-600">{asset.area} m²</td>
                     <td className="px-6 py-4 text-sm text-neutral-600">
                       {[asset.city, asset.region, asset.address].filter(Boolean).join(", ") || "—"}
@@ -172,6 +195,15 @@ export default function AssetTable({
                               <Receipt size={14} />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            className={sharedStyles.buttonIcon}
+                            title={t(asset.publishedAt ? "assets.table.unpublishTitle" : "assets.table.publishTitle")}
+                            aria-label={t(asset.publishedAt ? "assets.table.unpublishTitle" : "assets.table.publishTitle")}
+                            onClick={() => onTogglePublish(asset)}
+                          >
+                            {asset.publishedAt ? <GlobeOff size={14} /> : <Globe size={14} />}
+                          </Button>
                           <Button
                             variant="ghost"
                             className={sharedStyles.buttonIcon}

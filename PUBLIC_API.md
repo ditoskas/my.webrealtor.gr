@@ -136,10 +136,13 @@ email). The submission is durably stored either way.
 
 ## `GET /api/public/assets`
 
-Returns a realtor's own **active or pending** listings — both properties and land assets (see
-CLAUDE.md → "Asset management"; never `inactive` ones — that status isn't exposed publicly, and
-isn't one of the filters below). Meant for a realtor's own website to pull its own listings and
-render them, e.g. as a "current listings" page.
+Returns a realtor's own **active or pending, published** listings — both properties and land
+assets (see CLAUDE.md → "Asset management"; never `inactive` ones — that status isn't exposed
+publicly, and isn't one of the filters below). "Published" is a separate, explicit flag from
+`status`: a listing only appears here once a Publish action has been taken on it (Assets list page
+→ the publish/unpublish row action, next to Status) — being `active`/`pending` alone is not
+enough. Results are sorted by publish date, most recently published first. Meant for a realtor's
+own website to pull its own listings and render them, e.g. as a "current listings" page.
 
 > **Renamed from `/api/public/properties`:** this endpoint used to live at
 > `GET /api/public/properties` and return only properties. Renamed to `/api/public/assets` and
@@ -232,10 +235,10 @@ if (success) {
 
 Detail counterpart to `GET /api/public/assets` above — returns a single listing (property or
 land asset, see the list endpoint's contract note) instead of a filtered collection. Same guid (a
-`Realtor.guid`, not a `MessageForm.guid`) and same active/pending-only scoping: a listing that's
-`inactive`, or that belongs to a different realtor than the one `guid` identifies, is treated
-identically to a nonexistent `id` — both return `404`, so the endpoint never confirms or denies a
-listing's existence outside the caller's own guid.
+`Realtor.guid`, not a `MessageForm.guid`) and same active/pending + published-only scoping: a
+listing that's `inactive`, unpublished, or that belongs to a different realtor than the one `guid`
+identifies, is treated identically to a nonexistent `id` — both return `404`, so the endpoint
+never confirms or denies a listing's existence outside the caller's own guid.
 
 ### CORS
 
@@ -289,8 +292,8 @@ if (success) {
 
 ## `GET /api/public/similar/{assetId}`
 
-Given a reference listing, returns up to **3** other active/pending listings from the same
-realtor that best match it — meant for a "similar listings" widget on a listing's own page.
+Given a reference listing, returns up to **3** other active/pending, published listings from the
+same realtor that best match it — meant for a "similar listings" widget on a listing's own page.
 
 Matching, in order:
 1. Same realtor as the reference (via `guid`, same rule as every other public endpoint), same kind
@@ -302,10 +305,11 @@ Matching, in order:
 4. Whichever set was used, results are sorted by closeness in `price` to the reference (nearest
    first) and capped at 3.
 
-Same active/pending-only scoping as the other `/api/public/assets` endpoints: a reference listing
-that's `inactive`, or belongs to a different realtor than the one `guid` identifies, is treated as
-not found — this endpoint never confirms or denies a listing's existence outside the caller's own
-guid. Candidate listings are scoped the same way (never `inactive`).
+Same active/pending + published-only scoping as the other `/api/public/assets` endpoints: a
+reference listing that's `inactive`, unpublished, or belongs to a different realtor than the one
+`guid` identifies, is treated as not found — this endpoint never confirms or denies a listing's
+existence outside the caller's own guid. Candidate listings are scoped the same way (never
+`inactive`, never unpublished).
 
 ### CORS
 
@@ -350,5 +354,65 @@ const response = await fetch(
 const { success, payload } = await response.json();
 if (success) {
   payload.forEach((listing) => console.log(listing.isLand, listing.title, listing.price));
+}
+```
+
+---
+
+## `GET /api/public/recent/{size}`
+
+Returns a realtor's `size` most recently **published** listings — both properties and land assets
+— sorted newest-published-first. Meant for a "latest listings" widget, e.g. a homepage teaser on a
+realtor's own website, distinct from `GET /api/public/assets` (which returns the realtor's *whole*
+catalog, unsorted by publish date, for a full listings page).
+
+Same guid-scoped, unauthenticated, cross-origin contract as every other public endpoint here (a
+`Realtor.guid`, not a `MessageForm.guid`), and the same active/pending + published-only scoping as
+`GET /api/public/assets` — a listing only appears here once it's been explicitly published (see
+that endpoint's own note above), not merely because it's `active`/`pending`.
+
+### CORS
+
+Cross-origin requests are allowed from any origin:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+```
+Browsers will send a preflight `OPTIONS` request first; this endpoint answers it with `204` and
+the headers above.
+
+### Request
+
+`GET /api/public/recent/{size}?guid=...`
+
+| Param  | Type   | Required | Notes                                                                                     |
+|--------|--------|----------|----------------------------------------------------------------------------------------------|
+| `size` | number | yes      | Path segment — how many listings to return. Not a positive integer (missing, `0`, negative, non-numeric) → falls back to **3**, not a `400`. Always silently capped at **20**, even if a larger value is requested. |
+| `guid` | string | yes      | The realtor's own guid (see `GET /api/public/assets`).                                       |
+
+### Response
+
+Follows the [response envelope](#response-envelope) above; `payload` is an array of 0–`size`
+listing objects, each in the same shape as one entry of `GET /api/public/assets`'s `payload`
+array (see that endpoint's Response section for the exact per-item shape).
+
+| Status | Body                                                                         | Meaning                                    |
+|--------|---------------------------------------------------------------------------------|-----------------------------------------------|
+| 200    | `{ "success": true, "payload": [ { ... }, ... ], "message": "" }`               | Query executed (possibly zero results, if the realtor has no published listings). |
+| 400    | `{ "success": false, "payload": null, "message": "Invalid request" }`           | Missing `guid`.                                |
+| 404    | `{ "success": false, "payload": null, "message": "Not found" }`                 | `guid` doesn't match any realtor.              |
+| 500    | `{ "success": false, "payload": null, "message": "Internal server error" }`     | Unexpected failure.                            |
+
+### Example
+
+```js
+const response = await fetch(
+  "https://my.webrealtor.gr/api/public/recent/5?" +
+    new URLSearchParams({ guid: "9c6f2b1a-9e2d-4b2b-8a3e-1f2c3d4e5f6a" })
+);
+const { success, payload } = await response.json();
+if (success) {
+  payload.forEach((listing) => console.log(listing.isLand, listing.title, listing.publishedAt));
 }
 ```

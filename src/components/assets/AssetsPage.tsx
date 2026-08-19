@@ -28,6 +28,7 @@ export default function AssetsPage() {
   const [landCategories, setLandCategories] = useState<LandCategory[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [tagNames, setTagNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
@@ -68,6 +69,37 @@ export default function AssetsPage() {
         setLandCategories(landCategoriesRes.data.data);
         setClients(clientsRes.data.data);
         setTags(tagsRes ? tagsRes.data.data : []);
+
+        // Tag id -> name lookup for the list table's Tags column (see CLAUDE.md → "Tags"). For
+        // non-Root this is just the already-fetched `tags` above. Root has no realtorId of its own
+        // (that fetch is skipped, see below), so instead resolve every realtor actually present in
+        // this load's asset list, one /api/tags?realtorId= call each — a tag id alone doesn't say
+        // which realtor's tag set it came from.
+        if (isRoot) {
+          const realtorIds = Array.from(new Set(assetsRes.data.data.map((asset) => asset.realtorId)));
+          const tagLists = await Promise.all(
+            realtorIds.map((id) =>
+              apiClient
+                .get<ApiResponse<Tag[]>>(`/api/tags?realtorId=${id}`)
+                .then((response) => response.data.data)
+                .catch(() => [])
+            )
+          );
+          setTagNames(
+            tagLists.flat().reduce<Record<string, string>>((map, tag) => {
+              map[tag.id] = tag.name;
+              return map;
+            }, {})
+          );
+        } else {
+          setTagNames(
+            (tagsRes ? tagsRes.data.data : []).reduce<Record<string, string>>((map, tag) => {
+              map[tag.id] = tag.name;
+              return map;
+            }, {})
+          );
+        }
+
         setError(null);
         if (!options?.silent) {
           MessageHandler.normal(dispatch, t("assets.countMessage", { count: assetsRes.data.data.length }));
@@ -87,6 +119,27 @@ export default function AssetsPage() {
   }, [loadData]);
 
   const reloadSilently = useCallback(() => loadData({ silent: true }), [loadData]);
+
+  // Publish/unpublish row action — see CLAUDE.md → "Public listings API". POST stamps `publishedAt`
+  // with now, DELETE clears it; same convention as /api/realtors/[id]/image.
+  const handleTogglePublish = useCallback(
+    async (asset: Asset) => {
+      const title = asset.title || t("assets.table.listingFallback", { id: asset.id });
+      try {
+        if (asset.publishedAt) {
+          await apiClient.delete(`/api/assets/${asset.id}/publish`);
+          MessageHandler.success(dispatch, t("assets.table.unpublishSuccess", { title }));
+        } else {
+          await apiClient.post(`/api/assets/${asset.id}/publish`);
+          MessageHandler.success(dispatch, t("assets.table.publishSuccess", { title }));
+        }
+        reloadSilently();
+      } catch {
+        MessageHandler.error(dispatch, t("assets.table.publishError"));
+      }
+    },
+    [dispatch, reloadSilently, t]
+  );
 
   const realtorNames = useMemo(
     () =>
@@ -201,6 +254,7 @@ export default function AssetsPage() {
             propertyCategoryNames={propertyCategoryNames}
             landCategoryNames={landCategoryNames}
             owners={owners}
+            tagNames={tagNames}
             showRealtorColumn={isRoot}
             canEdit={canEdit}
             onView={(asset) => router.push(`/assets/${asset.id}/view`)}
@@ -208,6 +262,7 @@ export default function AssetsPage() {
             onDelete={setAssetToDelete}
             onMedia={(asset) => router.push(`/assets/${asset.id}/media`)}
             onReceipt={(asset) => router.push(`/tools/receipt?propertyId=${asset.id}`)}
+            onTogglePublish={handleTogglePublish}
           />
         </>
       )}

@@ -232,15 +232,30 @@ when asked.
   PropertyCategory slug, property results only), `landType` (a LandCategory slug, land results
   only), `action` (`transactionType`: sale|rent), `minPrice`/`maxPrice`, `tag` (one of the
   realtor's own Tag names, case-insensitive exact match — see "Tags" below; unknown name → `400`).
-  `AssetRepository.findPublicByRealtorId` always restricts to `status: active|pending` — that's
-  fixed, not a caller-controlled filter. Response strips `clientId`/`realtorId`/`tagIds` (internal
-  refs) and populates `propertyCategoryId`/`landCategoryId` into a `propertyCategory`/
-  `landCategory` `{ id, name, slug }` object depending on `isLand`; every other `*Id` ref stays a
-  raw ObjectId. `GET /api/public/assets/{id}` is the single-listing counterpart, same guid/
-  active-pending scoping. A third endpoint, `GET /api/public/similar/{assetId}`, returns up to 3
-  other active/pending listings from the same realtor matching the reference listing's action and
-  (where enough candidates exist) category, closest in price first — see PUBLIC_API.md and
-  `AssetService.findSimilar`/`AssetRepository.findSimilarCandidates` for the exact fallback logic.
+  `AssetRepository.findPublicByRealtorId` always restricts to `status: active|pending` **and**
+  `publishedAt: { $ne: null }` — both fixed, not caller-controlled filters — and sorts by
+  `publishedAt` descending (most recently published first), not `createdAt`. Response strips
+  `clientId`/`realtorId`/`tagIds` (internal refs) and populates `propertyCategoryId`/
+  `landCategoryId` into a `propertyCategory`/`landCategory` `{ id, name, slug }` object depending
+  on `isLand`; every other `*Id` ref stays a raw ObjectId. `GET /api/public/assets/{id}` is the
+  single-listing counterpart, same guid/active-pending/published scoping. A third endpoint,
+  `GET /api/public/similar/{assetId}`, returns up to 3 other active/pending, published listings
+  from the same realtor matching the reference listing's action and (where enough candidates
+  exist) category, closest in price first — see PUBLIC_API.md and `AssetService.findSimilar`/
+  `AssetRepository.findSimilarCandidates` for the exact fallback logic. A fourth,
+  `GET /api/public/recent/{size}`, returns just that realtor's `size` most recently published
+  listings (default 3, capped at 20 — see `AssetRepository.findRecentPublishedByRealtorId`), for a
+  "latest listings" widget.
+
+  **Publish/unpublish** — `publishedAt` (nullable `Date` on `Asset`, independent of `status`) is
+  the actual gate on every `/api/public/**` listing endpoint above; a listing being `active`/
+  `pending` alone never makes it publicly visible. Toggled via `POST`/`DELETE
+  /api/assets/[id]/publish` (`AssetService.setPublished`, same POST-sets/DELETE-clears convention
+  as `/api/realtors/[id]/image`) — POST stamps the current time, DELETE clears it back to `null`.
+  Row action on the Assets list table (`AssetTable.tsx`), a Published/Draft badge next to the
+  Status badge plus a publish/unpublish icon button in Actions, `canEdit`-gated. (The Add/Edit
+  Asset form also still has its own free-text `publishedAt` date field for manually backdating —
+  unrelated to this toggle, which always stamps "now".)
 
 - **Tags** — Free-form per-realtor labels (`models/Tag.ts`: `realtorId`+`name`, compound unique
   index, no slug/soft-delete — hard delete instead), managed by the realtor themselves on their own
@@ -251,8 +266,12 @@ when asked.
   Asset on the Add/Edit page (`Asset.tagIds`, multi-select chip toggle in `AssetFormFields.tsx`);
   filterable (OR semantics) on the Assets search bar (`AssetSearchBar.tsx`, hidden for Root — Tags
   are realtor-scoped and Root has no single `realtorId` to fetch a set by); filterable on the public
-  API via `?tag=` above. Deleting a tag (`TagService.remove`) best-effort pulls its id out of every
-  Asset's `tagIds` via `AssetService.removeTagFromAll`/`AssetRepository.pullTagFromAll`.
+  API via `?tag=` above. Also shown read-only as chips in their own column on the Assets list table
+  (`AssetTable.tsx`) — for Root, whose own tag-filter fetch is skipped (see above), the table
+  instead resolves tag names by fetching each realtor represented in the loaded asset list, since a
+  tag id alone is meaningless without knowing which realtor's tag set it belongs to. Deleting a tag
+  (`TagService.remove`) best-effort pulls its id out of every Asset's `tagIds` via
+  `AssetService.removeTagFromAll`/`AssetRepository.pullTagFromAll`.
 
 - **Client management** — Belongs to a Realtor. Model: gender(nullable, Male|Female only)/firstName/
   lastName/tin/city/address/zipcode/email/phone/mobile/realtorId. `GET /api/clients` takes optional
