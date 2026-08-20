@@ -57,6 +57,21 @@ function toImages(value: unknown): IMediaImage[] {
   return images;
 }
 
+// The plot boundary polygon, drawn on the Location map — silently drops any point missing a
+// finite lat/lng, same "trust the UI, validate the shape" discipline as toImages/toTagIds below.
+function toBoundary(value: unknown): { lat: number; lng: number }[] {
+  if (!Array.isArray(value)) return [];
+  const points: { lat: number; lng: number }[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const { lat, lng } = item as Record<string, unknown>;
+    const latNum = typeof lat === "number" ? lat : Number(lat);
+    const lngNum = typeof lng === "number" ? lng : Number(lng);
+    if (Number.isFinite(latNum) && Number.isFinite(lngNum)) points.push({ lat: latNum, lng: lngNum });
+  }
+  return points;
+}
+
 // Tags are managed on Profile, referenced here by id only — this just keeps whatever array of
 // valid-looking ObjectId strings came back, silently dropping anything malformed (same "trust the
 // UI, validate the shape" discipline as toImages above). Not cross-checked against the realtor's
@@ -222,6 +237,7 @@ export function parseAssetBody(body: Record<string, unknown>): ParsedAssetBody {
     latitude: toOptionalNumber(body.latitude),
     longitude: toOptionalNumber(body.longitude),
     googleMapsUrl: typeof body.googleMapsUrl === "string" ? body.googleMapsUrl.trim() : "",
+    boundary: toBoundary(body.boundary),
 
     images: toImages(body.images),
 

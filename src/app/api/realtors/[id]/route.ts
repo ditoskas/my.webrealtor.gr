@@ -6,7 +6,7 @@ import { getCurrentUserId } from "@/lib/auth";
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const data = await RealtorService.get(id);
+    const data = await RealtorService.getWithCounts(id);
     if (!data) return NextResponse.json({ message: "Not found" }, { status: 404 });
     return NextResponse.json({ data, success: true });
   } catch (error) {

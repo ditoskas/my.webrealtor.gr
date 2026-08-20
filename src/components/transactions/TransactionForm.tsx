@@ -38,9 +38,8 @@ function todayIsoDate(): string {
 
 // realtor.saleCommission drives a "buy" action, realtor.rentCommission drives "rent" — see
 // CLAUDE.md → "Realtor commission rates". Returns null (leave commission untouched) when the
-// realtor has no rate set for that action. Only auto-fills buyerCommission (the rate configured
-// on the realtor) — sellerCommission is always manual, since not every deal collects from both
-// sides and there's no second rate to derive it from.
+// realtor has no rate set for that action. Used to auto-fill both buyerCommission and
+// sellerCommission identically — the realtor charges the same rate on both sides of the deal.
 function computeCommission(price: number, action: TransactionInput["action"], realtor: Realtor | null): number | null {
   if (!realtor) return null;
   const rate = action === "rent" ? realtor.rentCommission : realtor.saleCommission;
@@ -136,8 +135,7 @@ export default function TransactionForm({
 
   // Client/Property/Land options scoped to the currently chosen realtor — see CLAUDE.md → "Data
   // scoping by realtor" (CRITICAL). Refetched whenever realtorId changes (Root switching realtors).
-  // `clients` is no longer a picker's options list (see handleListingSelect below) — it's only
-  // used to resolve the read-only client display's name.
+  // `clients` backs both the Buyer/Renter picker and each listing option's owner suffix.
   useEffect(() => {
     if (!values.realtorId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing dependent lists when realtorId is unset, mirrors AssetDetail's own client-list effect
@@ -173,24 +171,30 @@ export default function TransactionForm({
   // option's label so Property and Land entries stay distinguishable in one combobox. Only
   // active/pending listings are offered — an inactive listing isn't a deal in progress, so it's
   // excluded from the picker (not from `listings` itself, which handleListingSelect still searches
-  // in full for edit-mode's already-saved listingId).
+  // in full for edit-mode's already-saved listingId). Each option's label also carries the
+  // listing's owner (Asset.clientId, resolved against the same realtor-scoped `clients` list) so
+  // the seller/landlord is visible while picking — distinct from the Buyer/Renter field below,
+  // which is the transaction's own (separately picked) client.
   const listingOptions = listings
     .filter((listing) => listing.status === "active" || listing.status === "pending")
-    .map((listing) => ({
-      value: listing.id,
-      label: `${listingLabel(listing, propertyCategories, floorLevels, landCategories)} (${t(`transactions.listingType.${listing.isLand ? "Land" : "Property"}`)})`,
-    }));
+    .map((listing) => {
+      const owner = listing.clientId ? clients.find((client) => client.id === listing.clientId) : undefined;
+      const ownerSuffix = owner ? ` · ${t("transactions.form.listingOwner")}: ${owner.firstName} ${owner.lastName}` : "";
+      return {
+        value: listing.id,
+        label: `${listingLabel(listing, propertyCategories, floorLevels, landCategories)} (${t(`transactions.listingType.${listing.isLand ? "Land" : "Property"}`)})${ownerSuffix}`,
+      };
+    });
 
-  const selectedClient = values.clientId ? clients.find((client) => client.id === values.clientId) : undefined;
-
-  // Reads the selected listing's price, type, owning client (Property/Land.clientId — the
-  // transaction's client is no longer picked by hand, it's read off the listing, see CLAUDE.md →
-  // "Transactions"), and action — derived from the listing's own `transactionType` ("rent" stays
-  // "rent", "sale" becomes "buy", matching Transaction.action's own "rent"/"buy" vocabulary, see
-  // CLAUDE.md → "Transactions"). action/clientId are no longer user-editable but are still saved
-  // on the transaction (for the Action column/filtering and the client relationship), just derived
-  // instead of picked. Then, when the current realtor has a rate for that action, auto-fills
-  // commission from it (price × rate) — a listing with no matching rate leaves commission as-is
+  // Reads the selected listing's price and type, and derives action from the listing's own
+  // `transactionType` ("rent" stays "rent", "sale" becomes "buy", matching Transaction.action's
+  // own "rent"/"buy" vocabulary, see CLAUDE.md → "Transactions"). action is no longer
+  // user-editable but is still saved on the transaction (for the Action column/filtering), just
+  // derived instead of picked. The listing's own owner (Asset.clientId) is the seller/landlord,
+  // shown in the listing's own label above — it is NOT copied into `clientId` here, since that
+  // field is the transaction's Buyer/Renter, a separate person picked independently below. Then,
+  // when the current realtor has a rate for that action, auto-fills both buyerCommission and
+  // sellerCommission from it (price × rate) — a listing with no matching rate leaves both as-is
   // for manual entry.
   const handleListingSelect = (listingId: string) => {
     const listing = listings.find((option) => option.id === listingId);
@@ -198,15 +202,15 @@ export default function TransactionForm({
     setValues((prev) => {
       if (!listing) return { ...prev, listingId };
       const action: TransactionFormValues["action"] = listing.transactionType === "rent" ? "rent" : "buy";
-      const buyerCommission = computeCommission(listing.price, action, selectedRealtor);
+      const commission = computeCommission(listing.price, action, selectedRealtor);
       return {
         ...prev,
         listingId,
         listingType,
         action,
         price: listing.price,
-        buyerCommission: buyerCommission ?? prev.buyerCommission,
-        clientId: listing.clientId ?? "",
+        buyerCommission: commission ?? prev.buyerCommission,
+        sellerCommission: commission ?? prev.sellerCommission,
       };
     });
   };
@@ -222,8 +226,8 @@ export default function TransactionForm({
     } else {
       setListingError(null);
     }
-    if (values.listingId && !values.clientId) {
-      setClientError(t("transactions.form.clientMissing"));
+    if (!values.clientId) {
+      setClientError(t("transactions.form.buyerRequired"));
       hasError = true;
     } else {
       setClientError(null);
@@ -286,10 +290,17 @@ export default function TransactionForm({
       </div>
 
       <div className={sharedStyles.field}>
-        <span className={sharedStyles.label}>{t("transactions.form.client")}</span>
-        <p className={sharedStyles.input}>
-          {selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : "—"}
-        </p>
+        <label className={sharedStyles.label} htmlFor="tx-clientId">
+          {t("transactions.form.buyer")}
+        </label>
+        <SearchableSelect
+          id="tx-clientId"
+          disabled={!values.realtorId}
+          value={values.clientId}
+          onChange={(value) => setValues((prev) => ({ ...prev, clientId: value }))}
+          placeholder={t("common.selectPlaceholder")}
+          options={clients.map((client) => ({ value: client.id, label: `${client.firstName} ${client.lastName}` }))}
+        />
         {clientError && <p className={sharedStyles.errorText}>{clientError}</p>}
       </div>
 

@@ -144,6 +144,13 @@ export interface IAsset extends Document {
   longitude?: number | null;
   googleMapsUrl?: string;
 
+  // The plot's own boundary, drawn on the map (Location section, LocationMapPicker's drawing
+  // mode) as a closed polygon — distinct from `latitude`/`longitude` above, which is just a single
+  // pin. Ordered vertices, first point not repeated as the last (Google Maps closes the loop
+  // automatically — see google.maps.Polygon's `paths` docs). Optional/empty for a listing whose
+  // exact perimeter hasn't been traced yet.
+  boundary: { lat: number; lng: number }[];
+
   // Media
   images: IMediaImage[];
 
@@ -290,6 +297,11 @@ const assetSchema = new Schema<IAsset, IAssetModel>(
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null },
     googleMapsUrl: { type: String, default: "" },
+
+    boundary: {
+      type: [new Schema({ lat: { type: Number, required: true }, lng: { type: Number, required: true } }, { _id: false })],
+      default: [],
+    },
 
     // Media
     images: { type: [mediaImageSchema], default: [] },

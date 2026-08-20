@@ -23,30 +23,39 @@ export class RealtorService {
   // one response from the client's perspective (no per-realtor stats endpoint), computed with
   // parallel `countDocuments` calls per realtor server-side. Fine at the realtor counts this
   // app deals with; revisit with a single aggregation query if that stops being true.
+  private static async withCounts(realtor: IRealtor) {
+    const [clientCount, propertyCount, landCount] = await Promise.all([
+      ClientService.countForRealtor(realtor.id),
+      AssetService.countForRealtor(realtor.id, false),
+      AssetService.countForRealtor(realtor.id, true),
+    ]);
+    return {
+      ...(realtor.toJSON() as unknown as Record<string, unknown>),
+      clientCount,
+      propertyCount,
+      landCount,
+    };
+  }
+
   static async list() {
     await connectDB();
     const realtors = await realtorRepository.findAll();
-
-    return Promise.all(
-      realtors.map(async (realtor) => {
-        const [clientCount, propertyCount, landCount] = await Promise.all([
-          ClientService.countForRealtor(realtor.id),
-          AssetService.countForRealtor(realtor.id, false),
-          AssetService.countForRealtor(realtor.id, true),
-        ]);
-        return {
-          ...(realtor.toJSON() as unknown as Record<string, unknown>),
-          clientCount,
-          propertyCount,
-          landCount,
-        };
-      })
-    );
+    return Promise.all(realtors.map((realtor) => RealtorService.withCounts(realtor)));
   }
 
   static async get(id: string) {
     await connectDB();
     return realtorRepository.findById(id);
+  }
+
+  // Same shape as list()'s per-realtor entries — used by the Realtor View Page, which fetches a
+  // single realtor rather than the list, and would otherwise never see clientCount/propertyCount/
+  // landCount (get() intentionally stays count-free for every other, existence-check-only caller).
+  static async getWithCounts(id: string) {
+    await connectDB();
+    const realtor = await realtorRepository.findById(id);
+    if (!realtor) return null;
+    return RealtorService.withCounts(realtor);
   }
 
   static async findByEmail(email: string) {

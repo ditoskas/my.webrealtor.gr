@@ -296,6 +296,17 @@ when asked.
   thumbnails, stats bar, owner/description/price-history/technical/notes, Listing Realtor card
   (Root-only).
 
+  **Plot boundary** — `Asset.boundary`, an ordered `{lat,lng}[]` polygon distinct from the single
+  `latitude`/`longitude` pin, drawn on the Location section's map (`LocationMapPicker`'s drawing
+  mode, `@react-google-maps/api`'s `DrawingManager`/`Polygon` — the "drawing" library, loaded
+  alongside the base Maps script). Draw/redraw/clear are row actions under the map, gated behind
+  the picker's own `onBoundaryChange` prop (opt-in per usage — only `AssetDetail` passes it today);
+  editing an existing boundary (drag a vertex, drag the whole shape) re-syncs `Asset.boundary` from
+  the live `google.maps.Polygon` path on every change. Parsed/validated in
+  `app/api/assets/parseAssetBody.ts`'s `toBoundary()` (drops any point without a finite lat/lng),
+  same "trust the UI, validate the shape" discipline as `images`/`tagIds`. Not yet rendered
+  anywhere read-only (Asset View Page, public API) — currently create/edit only.
+
   Every other collection that references "a Property or a Land" (`Note`/`Attachment` via
   `entityType`, `Viewing`/`InterestFor`/`Transaction`/`PriceHistory` via `listingType`) was **not**
   migrated or renamed — those fields keep their existing `"Property"|"Land"` string values

@@ -179,6 +179,9 @@ interface FormValues {
   longitude: string;
   googleMapsUrl: string;
 
+  // The plot's own boundary polygon, drawn on the Location map — see models/Asset.ts's `boundary`.
+  boundary: { lat: number; lng: number }[];
+
   // Not editable here — managed on the dedicated Media page (table row action), see
   // components/assets/AssetMediaPage. Carried through unmodified on save so an edit here never
   // wipes out images uploaded via that page.
@@ -307,6 +310,7 @@ const EMPTY_VALUES: FormValues = {
   latitude: "",
   longitude: "",
   googleMapsUrl: "",
+  boundary: [],
 
   images: [],
   tagIds: [],
@@ -434,6 +438,7 @@ function assetToFormValues(asset: Asset): FormValues {
     latitude: num(asset.latitude),
     longitude: num(asset.longitude),
     googleMapsUrl: asset.googleMapsUrl ?? "",
+    boundary: asset.boundary ?? [],
 
     images: asset.images ?? [],
     tagIds: asset.tagIds ?? [],
@@ -966,6 +971,8 @@ export default function AssetDetail({ mode, assetId }: AssetDetailProps) {
                 googleMapsUrl: mapsUrl,
               }));
             }}
+            boundary={values.boundary}
+            onBoundaryChange={(points) => setField("boundary", points)}
           />
         </div>
       </Card>

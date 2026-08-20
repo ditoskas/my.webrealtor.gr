@@ -268,6 +268,9 @@ export interface Asset {
   longitude?: number | null;
   googleMapsUrl?: string;
 
+  // The plot's own boundary, drawn on the Location map — see models/Asset.ts.
+  boundary: { lat: number; lng: number }[];
+
   // Media
   images: PropertyImage[];
 

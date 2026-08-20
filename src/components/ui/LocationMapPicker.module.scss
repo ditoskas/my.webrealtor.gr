@@ -23,6 +23,12 @@
   gap: 1rem;
 }
 
+.boundaryControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .hint {
   font-size: 0.75rem;
   color: v.$neutral-500;

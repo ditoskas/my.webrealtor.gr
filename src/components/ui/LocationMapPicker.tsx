@@ -1,10 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
+import { DrawingManager, GoogleMap, MarkerF, Polygon, useJsApiLoader, type Libraries } from "@react-google-maps/api";
+import Button from "./Button";
 import appSettings from "@/lib/appSettings";
 import { useTranslation } from "@/store/hooks";
 import styles from "./LocationMapPicker.module.scss";
+
+// Stable reference required by useJsApiLoader — a new array literal on every render would make it
+// think the script needs reloading with different libraries. "drawing" is what unlocks
+// DrawingManager/google.maps.drawing.OverlayType below, for the plot boundary tool.
+const LIBRARIES: Libraries = ["drawing"];
 
 // Athens, Greece — the last-resort starting view when a listing has no coordinates yet and no
 // realtor address could be geocoded either.
@@ -29,6 +35,11 @@ function buildGoogleMapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 
+export interface LatLngPoint {
+  lat: number;
+  lng: number;
+}
+
 interface LocationMapPickerProps {
   latitude: string;
   longitude: string;
@@ -39,6 +50,9 @@ interface LocationMapPickerProps {
   addressQuery?: string;
   /** Keep re-geocoding addressQuery and moving the marker on every change, even after a position has been picked — for the "insert" (create) form, where the address is the source of truth. Defaults to false (edit-safe: stop following once a position exists, so it can't silently override a manually fine-tuned or previously-saved pin). */
   alwaysFollowAddress?: boolean;
+  /** The plot's own boundary polygon — see models/Asset.ts's `boundary`. Omit entirely on pickers that don't need it (e.g. Realtor address). */
+  boundary?: LatLngPoint[];
+  onBoundaryChange?: (points: LatLngPoint[]) => void;
 }
 
 export default function LocationMapPicker({
@@ -48,11 +62,14 @@ export default function LocationMapPicker({
   fallbackAddress,
   addressQuery,
   alwaysFollowAddress = false,
+  boundary,
+  onBoundaryChange,
 }: LocationMapPickerProps) {
   const t = useTranslation();
   const { isLoaded, loadError } = useJsApiLoader({
     id: "webrealtor-google-maps-script",
     googleMapsApiKey: appSettings.googleMapsApiKey,
+    libraries: LIBRARIES,
   });
 
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
@@ -107,20 +124,54 @@ export default function LocationMapPicker({
     return () => clearTimeout(timeout);
   }, [isLoaded, hasPosition, alwaysFollowAddress, addressQuery, applyPosition]);
 
+  const boundaryPoints = useMemo(() => boundary ?? [], [boundary]);
+  const boundaryCentroid = useMemo(() => {
+    if (boundaryPoints.length === 0) return null;
+    const sum = boundaryPoints.reduce((acc, p) => ({ lat: acc.lat + p.lat, lng: acc.lng + p.lng }), { lat: 0, lng: 0 });
+    return { lat: sum.lat / boundaryPoints.length, lng: sum.lng / boundaryPoints.length };
+  }, [boundaryPoints]);
+
   const position = useMemo(() => {
     if (hasPosition) return { lat: parsedLat, lng: parsedLng };
+    if (boundaryCentroid) return boundaryCentroid;
     if (fallbackCenter) return fallbackCenter;
     return DEFAULT_CENTER;
-  }, [hasPosition, parsedLat, parsedLng, fallbackCenter]);
+  }, [hasPosition, parsedLat, parsedLng, boundaryCentroid, fallbackCenter]);
 
-  const zoom = hasPosition ? SELECTED_ZOOM : fallbackCenter ? REALTOR_FALLBACK_ZOOM : DEFAULT_ZOOM;
+  const zoom = hasPosition ? SELECTED_ZOOM : boundaryCentroid ? SELECTED_ZOOM : fallbackCenter ? REALTOR_FALLBACK_ZOOM : DEFAULT_ZOOM;
+
+  // Plot boundary drawing — see CLAUDE.md → "Asset management". Only active when the caller opted
+  // in via onBoundaryChange (AssetDetail); pickers that don't pass it (none today, but the prop is
+  // optional) render the marker-only picker unchanged.
+  const [isDrawingBoundary, setIsDrawingBoundary] = useState(false);
+  const polygonRef = useRef<google.maps.Polygon | null>(null);
+
+  const syncBoundaryFromPolygon = useCallback(() => {
+    const polygon = polygonRef.current;
+    if (!polygon || !onBoundaryChange) return;
+    const path = polygon.getPath().getArray();
+    onBoundaryChange(path.map((latLng) => ({ lat: latLng.lat(), lng: latLng.lng() })));
+  }, [onBoundaryChange]);
+
+  const handlePolygonComplete = useCallback(
+    (polygon: google.maps.Polygon) => {
+      const path = polygon.getPath().getArray();
+      onBoundaryChange?.(path.map((latLng) => ({ lat: latLng.lat(), lng: latLng.lng() })));
+      // The DrawingManager's own overlay is replaced by our controlled <Polygon> below (driven from
+      // the boundary prop) the moment the parent re-renders with the new points — remove this raw
+      // one now so the two don't briefly double up.
+      polygon.setMap(null);
+      setIsDrawingBoundary(false);
+    },
+    [onBoundaryChange]
+  );
 
   const handleMapClick = useCallback(
     (event: google.maps.MapMouseEvent) => {
-      if (!event.latLng) return;
+      if (isDrawingBoundary || !event.latLng) return;
       applyPosition(event.latLng.lat(), event.latLng.lng());
     },
-    [applyPosition]
+    [applyPosition, isDrawingBoundary]
   );
 
   const handleMarkerDragEnd = useCallback(
@@ -163,13 +214,53 @@ export default function LocationMapPicker({
               anchor: new google.maps.Point(18, 34),
             }}
           />
+
+          {onBoundaryChange && (
+            <DrawingManager
+              drawingMode={isDrawingBoundary ? google.maps.drawing.OverlayType.POLYGON : null}
+              onPolygonComplete={handlePolygonComplete}
+              options={{
+                drawingControl: false,
+                polygonOptions: {
+                  fillColor: "#004261",
+                  fillOpacity: 0.18,
+                  strokeColor: "#004261",
+                  strokeWeight: 2,
+                  clickable: false,
+                  editable: false,
+                  zIndex: 1,
+                },
+              }}
+            />
+          )}
+
+          {onBoundaryChange && boundaryPoints.length > 0 && !isDrawingBoundary && (
+            <Polygon
+              path={boundaryPoints}
+              draggable
+              editable
+              options={{ fillColor: "#004261", fillOpacity: 0.18, strokeColor: "#004261", strokeWeight: 2 }}
+              onLoad={(polygon) => {
+                polygonRef.current = polygon;
+              }}
+              onUnmount={() => {
+                polygonRef.current = null;
+              }}
+              onMouseUp={syncBoundaryFromPolygon}
+              onDragEnd={syncBoundaryFromPolygon}
+            />
+          )}
         </GoogleMap>
       </div>
       <div className={styles.footer}>
         <p className={styles.hint}>
-          {hasPosition
-            ? t("media.selectedLocation", { lat: parsedLat.toFixed(6), lng: parsedLng.toFixed(6) })
-            : t("media.mapHint")}
+          {isDrawingBoundary
+            ? t("media.boundaryDrawingHint")
+            : onBoundaryChange && boundaryPoints.length > 0
+              ? t("media.boundarySavedHint")
+              : hasPosition
+                ? t("media.selectedLocation", { lat: parsedLat.toFixed(6), lng: parsedLng.toFixed(6) })
+                : t("media.mapHint")}
         </p>
         {hasPosition && (
           <a
@@ -182,6 +273,25 @@ export default function LocationMapPicker({
           </a>
         )}
       </div>
+
+      {onBoundaryChange && (
+        <div className={styles.boundaryControls}>
+          {isDrawingBoundary ? (
+            <Button type="button" variant="ghost" onClick={() => setIsDrawingBoundary(false)}>
+              {t("media.cancelBoundary")}
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={() => setIsDrawingBoundary(true)}>
+              {boundaryPoints.length > 0 ? t("media.redrawBoundary") : t("media.drawBoundary")}
+            </Button>
+          )}
+          {boundaryPoints.length > 0 && !isDrawingBoundary && (
+            <Button type="button" variant="ghost" onClick={() => onBoundaryChange([])}>
+              {t("media.clearBoundary")}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
