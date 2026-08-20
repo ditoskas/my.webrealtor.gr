@@ -23,7 +23,7 @@ export class RealtorService {
   // one response from the client's perspective (no per-realtor stats endpoint), computed with
   // parallel `countDocuments` calls per realtor server-side. Fine at the realtor counts this
   // app deals with; revisit with a single aggregation query if that stops being true.
-  private static async withCounts(realtor: IRealtor) {
+  private static async withCounts(realtor: mongoose.HydratedDocument<IRealtor>) {
     const [clientCount, propertyCount, landCount] = await Promise.all([
       ClientService.countForRealtor(realtor.id),
       AssetService.countForRealtor(realtor.id, false),
