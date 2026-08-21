@@ -1,16 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DrawingManager, GoogleMap, MarkerF, Polygon, useJsApiLoader, type Libraries } from "@react-google-maps/api";
+import { GoogleMap, MarkerF, Polygon, useJsApiLoader, type Libraries } from "@react-google-maps/api";
 import Button from "./Button";
 import appSettings from "@/lib/appSettings";
 import { useTranslation } from "@/store/hooks";
 import styles from "./LocationMapPicker.module.scss";
 
 // Stable reference required by useJsApiLoader — a new array literal on every render would make it
-// think the script needs reloading with different libraries. "drawing" is what unlocks
-// DrawingManager/google.maps.drawing.OverlayType below, for the plot boundary tool.
-const LIBRARIES: Libraries = ["drawing"];
+// think the script needs reloading with different libraries. No extra libraries needed: the plot
+// boundary tool draws polygons by hand (see isDrawingBoundary below) rather than via
+// google.maps.drawing.DrawingManager, which Google removed from the Maps JS API as of v3.65.
+const LIBRARIES: Libraries = [];
+
+// How close (in degrees lat/lng) a click during boundary drawing must land to the first placed
+// corner to be treated as "close the shape" rather than "add another corner". Roughly ~20m at the
+// zoom levels this tool is used at — plot boundaries are small, so this doesn't need to account
+// for latitude-dependent longitude scaling.
+const BOUNDARY_CLOSE_THRESHOLD_DEG = 0.0002;
 
 // Athens, Greece — the last-resort starting view when a listing has no coordinates yet and no
 // realtor address could be geocoded either.
@@ -142,8 +149,11 @@ export default function LocationMapPicker({
 
   // Plot boundary drawing — see CLAUDE.md → "Asset management". Only active when the caller opted
   // in via onBoundaryChange (AssetDetail); pickers that don't pass it (none today, but the prop is
-  // optional) render the marker-only picker unchanged.
+  // optional) render the marker-only picker unchanged. Drawn by hand (click to place each corner,
+  // click near the first corner again to close the shape) rather than via
+  // google.maps.drawing.DrawingManager, which Google removed from the Maps JS API as of v3.65.
   const [isDrawingBoundary, setIsDrawingBoundary] = useState(false);
+  const [drawingPoints, setDrawingPoints] = useState<LatLngPoint[]>([]);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
 
   const syncBoundaryFromPolygon = useCallback(() => {
@@ -153,25 +163,42 @@ export default function LocationMapPicker({
     onBoundaryChange(path.map((latLng) => ({ lat: latLng.lat(), lng: latLng.lng() })));
   }, [onBoundaryChange]);
 
-  const handlePolygonComplete = useCallback(
-    (polygon: google.maps.Polygon) => {
-      const path = polygon.getPath().getArray();
-      onBoundaryChange?.(path.map((latLng) => ({ lat: latLng.lat(), lng: latLng.lng() })));
-      // The DrawingManager's own overlay is replaced by our controlled <Polygon> below (driven from
-      // the boundary prop) the moment the parent re-renders with the new points — remove this raw
-      // one now so the two don't briefly double up.
-      polygon.setMap(null);
-      setIsDrawingBoundary(false);
-    },
-    [onBoundaryChange]
-  );
+  const startDrawingBoundary = useCallback(() => {
+    setDrawingPoints([]);
+    setIsDrawingBoundary(true);
+  }, []);
+
+  const cancelDrawingBoundary = useCallback(() => {
+    setDrawingPoints([]);
+    setIsDrawingBoundary(false);
+  }, []);
 
   const handleMapClick = useCallback(
     (event: google.maps.MapMouseEvent) => {
-      if (isDrawingBoundary || !event.latLng) return;
+      if (!event.latLng) return;
+
+      if (isDrawingBoundary) {
+        const point: LatLngPoint = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+        setDrawingPoints((points) => {
+          const first = points[0];
+          const closesShape =
+            first &&
+            points.length >= 3 &&
+            Math.abs(point.lat - first.lat) < BOUNDARY_CLOSE_THRESHOLD_DEG &&
+            Math.abs(point.lng - first.lng) < BOUNDARY_CLOSE_THRESHOLD_DEG;
+          if (closesShape) {
+            onBoundaryChange?.(points);
+            setIsDrawingBoundary(false);
+            return [];
+          }
+          return [...points, point];
+        });
+        return;
+      }
+
       applyPosition(event.latLng.lat(), event.latLng.lng());
     },
-    [applyPosition, isDrawingBoundary]
+    [applyPosition, isDrawingBoundary, onBoundaryChange]
   );
 
   const handleMarkerDragEnd = useCallback(
@@ -215,21 +242,17 @@ export default function LocationMapPicker({
             }}
           />
 
-          {onBoundaryChange && (
-            <DrawingManager
-              drawingMode={isDrawingBoundary ? google.maps.drawing.OverlayType.POLYGON : null}
-              onPolygonComplete={handlePolygonComplete}
+          {onBoundaryChange && isDrawingBoundary && drawingPoints.length > 0 && (
+            <Polygon
+              path={drawingPoints}
               options={{
-                drawingControl: false,
-                polygonOptions: {
-                  fillColor: "#004261",
-                  fillOpacity: 0.18,
-                  strokeColor: "#004261",
-                  strokeWeight: 2,
-                  clickable: false,
-                  editable: false,
-                  zIndex: 1,
-                },
+                fillColor: "#004261",
+                fillOpacity: 0.18,
+                strokeColor: "#004261",
+                strokeWeight: 2,
+                clickable: false,
+                editable: false,
+                zIndex: 1,
               }}
             />
           )}
@@ -277,11 +300,11 @@ export default function LocationMapPicker({
       {onBoundaryChange && (
         <div className={styles.boundaryControls}>
           {isDrawingBoundary ? (
-            <Button type="button" variant="ghost" onClick={() => setIsDrawingBoundary(false)}>
+            <Button type="button" variant="ghost" onClick={cancelDrawingBoundary}>
               {t("media.cancelBoundary")}
             </Button>
           ) : (
-            <Button type="button" variant="outline" onClick={() => setIsDrawingBoundary(true)}>
+            <Button type="button" variant="outline" onClick={startDrawingBoundary}>
               {boundaryPoints.length > 0 ? t("media.redrawBoundary") : t("media.drawBoundary")}
             </Button>
           )}
